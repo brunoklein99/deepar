@@ -38,7 +38,54 @@ def load_parts():
     parts = parts[indexes]
 
     # x and y are the same time series, with y shifted by 1
+    # carparts dataset is composed of 51 months, minus 1 for x, y shifting
     x = parts[:, :50]
-    y = parts[:, 1:50]
+    y = parts[:, 1:51]
 
-    return x, y
+    assert x.shape == y.shape
+
+    # last 8 months are used for validation
+    valid_x = x[:, -8:]
+    # from these 8, the first 4 are sequence encoding (past) and the last 4 are predicting (future)
+    valid_y = y[:, -4:]
+    # add feature dimension to decoder output
+    valid_y = np.expand_dims(valid_y, axis=-1)
+
+    # as above, first 4 months are the encoder inp
+    enc_x_valid = valid_x[:, :4]
+    # as above, last 4 months are decoder inp
+    dec_x_valid = valid_x[:, -4:]
+
+    # add feature dimension
+    enc_x_valid = np.expand_dims(enc_x_valid, axis=-1)
+    dec_x_valid = np.expand_dims(dec_x_valid, axis=-1)
+
+    # tmp, hold all training related data
+    train_x = []
+    train_y = []
+
+    # first 42 months are used for training, a training sample is generated
+    # from each 8 month window_x
+    x = np.expand_dims(x[:, :42], axis=-1)
+    y = np.expand_dims(y[:, :42], axis=-1)
+
+    # for each sequence
+    for i in range(len(x)):
+        # for each 8 month sequence
+        for j in range(42 - 8 + 1):
+            # adds 8 months to list
+            window_x = x[i, j:j+8]
+            window_y = window_x[-4:, :]
+            train_x.append(np.expand_dims(window_x, axis=0))
+            train_y.append(np.expand_dims(window_y, axis=0))
+
+    train_x = np.concatenate(train_x, axis=0)
+    train_y = np.concatenate(train_y, axis=0)
+
+    assert len(train_x) == len(train_y)
+
+    # same as above
+    enc_x_train = train_x[:, :4]
+    dec_x_train = train_x[:, -4:]
+
+    return enc_x_train, dec_x_train, train_y, enc_x_valid, dec_x_valid, valid_y
