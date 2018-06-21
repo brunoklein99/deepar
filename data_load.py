@@ -25,7 +25,7 @@ def get_keep_indexes(x):
 
 # http://isiarticles.com/bundles/Article/pre/pdf/20710.pdf (reference from DeepAR)
 # end of page 1, right below abstract
-def load_parts():
+def load_parts(debug=False):
     df = pd.read_csv('data/carparts.csv')
 
     # "out of 2509 series with complete records for 51 months"
@@ -36,6 +36,7 @@ def load_parts():
 
     indexes = get_keep_indexes(parts)
     parts = parts[indexes]
+    # parts /= np.max(parts)
 
     # x and y are the same time series, with y shifted by 1
     # carparts dataset is composed of 51 months, minus 1 for x, y shifting
@@ -71,11 +72,21 @@ def load_parts():
 
     # for each sequence
     for i in range(len(x)):
+        if debug:
+            print('parts     : ', list(np.squeeze(parts[i])))
+            print('parts     : ', list(np.squeeze(parts[i])))
+            print('sequence x: ', list(np.squeeze(x[i])))
+            print('sequence y: ', list(np.squeeze(y[i])))
         # for each 8 month sequence
         for j in range(42 - 8 + 1):
             # adds 8 months to list
+            if debug:
+                print('subseq ', j)
             window_x = x[i, j:j+8]
-            window_y = window_x[-4:, :]
+            window_y = y[i, j+4:j+8]
+            if debug:
+                print('x: ', list(np.squeeze(window_x)))
+                print('y:                     ', list(np.squeeze(window_y)))
             train_x.append(np.expand_dims(window_x, axis=0))
             train_y.append(np.expand_dims(window_y, axis=0))
 
