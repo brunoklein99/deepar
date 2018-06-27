@@ -36,7 +36,7 @@ def sample(time_offset, series, gran='monthly', seq_len=8, debug=False):
         if debug:
             print('i =', i + 1)
             print('z_{i, 1:T}  : ', list(series[i]))
-        for t_window in range(T - seq_len + 1):
+        for t_window in range(0, T - seq_len + 1):
             if debug:
                 print('t_window: ', t_window)
             x = []
@@ -78,16 +78,8 @@ def sample(time_offset, series, gran='monthly', seq_len=8, debug=False):
 
     X = np.array(X)
     Z = np.array(Z)
-    _, T, _ = Z.shape
 
-    v = 1 + np.mean(Z, axis=1)
-    v = np.expand_dims(v, axis=-1)
-
-    Z /= v
-
-    p = np.squeeze(v / np.sum(v))
-
-    return X, Z, v, p
+    return X, Z
 
 
 def load_parts(debug=False):
@@ -118,4 +110,15 @@ def load_parts(debug=False):
 
     time_offset = [datetime.date(1998, 1, 1)] * len(z)
 
-    return sample(time_offset, z, seq_len=8, debug=debug)
+    X, Z_train = sample(time_offset, z, seq_len=8, debug=debug)
+
+    _, T, _ = Z_train.shape
+
+    v = 1 + np.mean(Z_train, axis=1)
+    v = np.expand_dims(v, axis=-1)
+
+    Z_train /= v
+
+    p = np.squeeze(v / np.sum(v))
+
+    return X, Z_train, v, p
