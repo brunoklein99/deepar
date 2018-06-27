@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import settings
+import math
 from model import Net
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
@@ -9,30 +10,16 @@ from DefaultDataset import DefaultDataset
 from data_load import load_parts
 
 
-def gamma(x):
-    return torch.exp(torch.lgamma(x))
-
-
-def neg_bin_loss(z, m, a):
-
-    inva = 1 / a
-    am = a * m
-
-    t1_n = gamma(z + inva)
-    t1_d = gamma(z + 1) * gamma(inva)
-    t1 = t1_n / t1_d
-
-    t2_n = 1
-    t2_d = gamma(1 + am)
-    t2 = t2_n / t2_d
-    t2 = torch.pow(t2, inva)
-
-    t3_n = am
-    t3_d = 1 + am
-    t3 = t3_n / t3_d
-    t3 = torch.pow(t3, z)
-
-    pdf = t1 * t2 * t3
+# https://www.johndcook.com/blog/2008/04/24/how-to-calculate-binomial-probabilities/
+def neg_bin_loss(z, mean, alpha):
+    r = 1 / alpha
+    ma = mean * alpha
+    pdf = torch.lgamma(z + r)
+    pdf -= torch.lgamma(z + 1)
+    pdf -= torch.lgamma(r)
+    pdf += r * torch.log(1 / (1 + ma))
+    pdf += z * torch.log(ma / (1 + ma))
+    pdf = torch.exp(pdf)
 
     loss = torch.log(pdf)
     loss = torch.sum(loss)
@@ -42,11 +29,13 @@ def neg_bin_loss(z, m, a):
 
 
 if __name__ == '__main__':
+
+    np.random.seed(101)
     torch.manual_seed(101)
 
-    x, z = load_parts()
+    x, z, v, p = load_parts()
 
-    dataset = DefaultDataset(x, z)
+    dataset = DefaultDataset(x, z, v, p)
 
     loader = DataLoader(
         dataset=dataset,
@@ -63,15 +52,18 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=settings.LEARNING_RATE)
 
     for epoch in range(settings.EPOCHS):
-        for i, (x, z) in enumerate(loader):
+        for i, (x, z, v) in enumerate(loader):
             x = Variable(x)
             z = Variable(z)
+            v = Variable(v)
 
             if settings.USE_CUDA:
                 x = x.cuda()
                 z = z.cuda()
+                v = v.cuda()
 
-            m, a = model(x)
+            m, a = model(x, v)
+
             loss = neg_bin_loss(z, m, a)
             optimizer.zero_grad()
             loss.backward()

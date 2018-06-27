@@ -78,8 +78,16 @@ def sample(time_offset, series, gran='monthly', seq_len=8, debug=False):
 
     X = np.array(X)
     Z = np.array(Z)
+    _, T, _ = Z.shape
 
-    return X, Z
+    v = 1 + np.mean(Z, axis=1)
+    v = np.expand_dims(v, axis=-1)
+
+    Z /= v
+
+    p = np.squeeze(v / np.sum(v))
+
+    return X, Z, v, p
 
 
 def load_parts(debug=False):

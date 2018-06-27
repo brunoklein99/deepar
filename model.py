@@ -24,8 +24,10 @@ class Net(nn.Module):
             out_features=1
         )
 
-    def forward(self, x):
+    def forward(self, x, v):
         o, (_, _) = self.cell(x)
         m = F.softplus(self.linear_m(o))
         a = F.softplus(self.linear_a(o))
+        m = torch.mul(m, v)
+        a = torch.div(a, torch.sqrt(v))
         return m, a
