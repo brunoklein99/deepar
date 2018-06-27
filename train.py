@@ -10,6 +10,15 @@ from DefaultDataset import DefaultDataset
 from data_load import load_parts
 
 
+def save_model(filename, model):
+    state = {'model': model}
+    torch.save(state, filename)
+
+
+def load_model(filename):
+    return torch.load(filename)['model']
+
+
 # https://www.johndcook.com/blog/2008/04/24/how-to-calculate-binomial-probabilities/
 def neg_bin_loss(z, mean, alpha):
     r = 1 / alpha
@@ -70,3 +79,5 @@ if __name__ == '__main__':
             optimizer.step()
 
             print('epoch {} batch {}/{} loss: {}'.format(epoch, i, len(loader), loss))
+
+    save_model('models/1', model)
