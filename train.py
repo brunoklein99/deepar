@@ -54,15 +54,22 @@ if __name__ == '__main__':
         shuffle=True
     )
 
-    model = Net().cuda()
+    model = Net()
+    if settings.USE_CUDA:
+        model = model.cuda()
+
     model.train()
 
     optimizer = optim.Adam(model.parameters(), lr=settings.LEARNING_RATE)
 
     for epoch in range(settings.EPOCHS):
         for i, (x, z) in enumerate(loader):
-            x = Variable(x).cuda()
-            z = Variable(z).cuda()
+            x = Variable(x)
+            z = Variable(z)
+
+            if settings.USE_CUDA:
+                x = x.cuda()
+                z = z.cuda()
 
             m, a = model(x)
             loss = neg_bin_loss(z, m, a)
