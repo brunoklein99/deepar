@@ -70,7 +70,7 @@ def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int
     return X, Z, V
 
 
-def load_parts():
+def get_parts_series():
     df = pd.read_csv('data/carparts.csv')
 
     df = df.dropna()
@@ -85,6 +85,13 @@ def load_parts():
     s = s[indexes]
 
     datetime_offset = datetime.datetime(1998, 1, 1)
+
+    return datetime_offset, s
+
+
+def load_parts():
+
+    datetime_offset, s = get_parts_series()
 
     enc_len = 8
     dec_len = 8
@@ -143,4 +150,4 @@ def load_parts():
         'dec_z': dec_z,
     }
 
-    return data
+    return datetime_offset, data

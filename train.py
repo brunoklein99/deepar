@@ -42,7 +42,7 @@ if __name__ == '__main__':
     np.random.seed(101)
     torch.manual_seed(101)
 
-    data = load_parts()
+    _, data = load_parts()
 
     x = data['x']
     z = data['z']
