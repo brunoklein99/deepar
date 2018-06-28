@@ -42,12 +42,12 @@ if __name__ == '__main__':
     np.random.seed(101)
     torch.manual_seed(101)
 
-    params = load_parts()
+    data = load_parts()
 
-    x = params['x']
-    z = params['z']
-    v = params['v']
-    p = params['p']
+    x = data['x']
+    z = data['z']
+    v = data['v']
+    p = data['p']
 
     dataset = DefaultDataset(x, z, v, p)
 
@@ -57,7 +57,8 @@ if __name__ == '__main__':
         shuffle=True
     )
 
-    model = Net()
+    _, _, x_dim = x.shape
+    model = Net(x_dim)
     if settings.USE_CUDA:
         model = model.cuda()
 

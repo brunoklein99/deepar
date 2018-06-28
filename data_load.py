@@ -50,6 +50,7 @@ def get_window_x_z_at_i_t(s, v, datetime_offset: datetime.datetime, i: int, t_wi
 
 
 def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int):
+    assert len(s) == len(v)
     X = []
     Z = []
     V = []
@@ -100,7 +101,7 @@ def load_parts():
 
     v = 1 + np.mean(s[:, t1:t0], axis=1)
 
-    x, z, v = get_x_z(
+    x_train, z_train, v_train = get_x_z(
         s,
         v,
         datetime_offset,
@@ -109,7 +110,9 @@ def load_parts():
         window_length=8,
     )
 
-    p = v / np.sum(v)
+    p = np.squeeze(v_train / np.sum(v_train))
+    v_train = np.expand_dims(v_train, axis=-1)
+    v_train = np.expand_dims(v_train, axis=-1)
 
     enc_x, enc_z, _ = get_x_z(
         s,
@@ -130,9 +133,9 @@ def load_parts():
     )
 
     data = {
-        'x': x,
-        'z': z,
-        'v': v,
+        'x': x_train,
+        'z': z_train,
+        'v': v_train,
         'p': p,
         'enc_x': enc_x,
         'enc_z': enc_z,

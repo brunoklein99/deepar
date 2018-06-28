@@ -6,10 +6,10 @@ import torch.nn.functional as F
 
 class Net(nn.Module):
 
-    def __init__(self):
+    def __init__(self, x_dim):
         super().__init__()
         self.cell = nn.LSTM(
-            input_size=settings.INPUT_DIM,
+            input_size=x_dim,
             hidden_size=settings.HIDDEN_DIM,
             num_layers=3,
             batch_first=True
@@ -18,7 +18,6 @@ class Net(nn.Module):
             in_features=settings.HIDDEN_DIM,
             out_features=1
         )
-
         self.linear_a = nn.Linear(
             in_features=settings.HIDDEN_DIM,
             out_features=1
