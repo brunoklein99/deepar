@@ -42,7 +42,12 @@ if __name__ == '__main__':
     np.random.seed(101)
     torch.manual_seed(101)
 
-    x, z, v, p = load_parts()
+    params = load_parts()
+
+    x = params['x']
+    z = params['z']
+    v = params['v']
+    p = params['p']
 
     dataset = DefaultDataset(x, z, v, p)
 
