@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+from torch.distributions import Poisson, Gamma
+
 import settings
 import math
 from model import Net
@@ -8,6 +10,28 @@ from torch.autograd import Variable
 from torch import optim
 from DefaultDataset import DefaultDataset
 from data_load import load_parts
+
+
+def rmse(z, mean, alpha):
+    r = 1 / alpha
+    ma = mean * alpha
+
+    p = ma / (1 + ma)
+    beta = (1 - p) / p
+
+    g = Gamma(concentration=r, rate=beta)
+    g = g.sample()
+
+    p = Poisson(g)
+
+    z_pred = p.sample()
+
+    rmse = z_pred - z
+    rmse = torch.pow(rmse, 2)
+    rmse = torch.mean(rmse)
+    rmse = torch.sqrt(rmse)
+
+    return rmse
 
 
 # https://www.johndcook.com/blog/2008/04/24/how-to-calculate-binomial-probabilities/
@@ -65,6 +89,11 @@ if __name__ == '__main__':
             m, a = model(x, v)
 
             loss = neg_bin_loss(z, m, a)
+            print('rmse', rmse(
+                z.cpu(),
+                m.cpu(),
+                a.cpu()
+            ))
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
