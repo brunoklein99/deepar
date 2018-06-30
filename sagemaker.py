@@ -15,6 +15,6 @@ if __name__ == '__main__':
     datetime_offset, s = get_parts_series()
 
     write_file('data/sagemaker_train.json', datetime_offset, s[:, :-8])
-    write_file('data/sagemaker_valid.json', datetime_offset, s[:, -8:])
+    write_file('data/sagemaker_valid.json', datetime_offset, s)
 
     print('finished')
