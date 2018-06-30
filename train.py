@@ -28,9 +28,9 @@ def neg_bin_loss(z, mean, alpha):
     pdf -= torch.lgamma(r)
     pdf += r * torch.log(1 / (1 + ma))
     pdf += z * torch.log(ma / (1 + ma))
-    # loss = torch.exp(pdf)
-    # loss = torch.log(pdf)
-    loss = pdf
+    pdf = torch.exp(pdf)
+
+    loss = torch.log(pdf)
     loss = torch.sum(loss)
     loss = - loss
 

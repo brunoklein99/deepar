@@ -119,7 +119,6 @@ def load_parts():
 
     p = np.squeeze(v_train / np.sum(v_train))
     v_train = np.expand_dims(v_train, axis=-1)
-    v_train = np.expand_dims(v_train, axis=-1)
 
     enc_x, enc_z, _ = get_x_z(
         s,
