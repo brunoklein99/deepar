@@ -1,13 +1,14 @@
 import numpy as np
 import torch
-import settings
-import math
-from model import Net
-from torch.utils.data import DataLoader
-from torch.autograd import Variable
 from torch import optim
+from torch.autograd import Variable
+from torch.utils.data import DataLoader
+from torch.distributions import Poisson, Gamma
+
+import settings
 from DefaultDataset import DefaultDataset
 from data_load import load_parts
+from model import Net
 
 
 def save_model(filename, model):
@@ -17,6 +18,17 @@ def save_model(filename, model):
 
 def load_model(filename):
     return torch.load(filename)['model']
+
+
+def rmse(z, mean, alpha):
+    r = 1 / alpha
+    p = (mean * alpha) / (1 + (mean * alpha))
+    b = (1 - p) / p
+    g = Gamma(r, b)
+    g = g.sample()
+    p = Poisson(g)
+    z_pred = p.sample()
+    return torch.sqrt(torch.mean(torch.pow(z_pred - z, 2)))
 
 
 # https://www.johndcook.com/blog/2008/04/24/how-to-calculate-binomial-probabilities/
@@ -80,6 +92,11 @@ if __name__ == '__main__':
             m, a = model(x, v)
 
             loss = neg_bin_loss(z, m, a)
+            print('rmse', rmse(
+                z.cpu(),
+                m.cpu(),
+                a.cpu()
+            ))
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
