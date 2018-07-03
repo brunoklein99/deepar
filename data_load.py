@@ -138,6 +138,9 @@ def load_parts():
         window_length=dec_len
     )
 
+    v = np.expand_dims(v, axis=-1)
+    v = np.expand_dims(v, axis=-1)
+
     data = {
         'x': x_train,
         'z': z_train,
@@ -145,8 +148,9 @@ def load_parts():
         'p': p,
         'enc_x': enc_x,
         'enc_z': enc_z,
-        'dec_x': dec_x,
+        'dec_x': dec_x[:, :, 1:],
         'dec_z': dec_z,
+        'dec_v': v,
     }
 
     return datetime_offset, data

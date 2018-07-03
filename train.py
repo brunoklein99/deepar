@@ -8,7 +8,7 @@ from torch.distributions import Poisson, Gamma
 import settings
 from DefaultDataset import DefaultDataset
 from data_load import load_parts
-from model import Net
+from model import Net, _sample
 
 
 def save_model(filename, model):
@@ -20,15 +20,8 @@ def load_model(filename):
     return torch.load(filename)['model']
 
 
-def rmse(z, mean, alpha):
-    r = 1 / alpha
-    p = (mean * alpha) / (1 + (mean * alpha))
-    b = (1 - p) / p
-    g = Gamma(r, b)
-    g = g.sample()
-    p = Poisson(g)
-    z_pred = p.sample()
-    return torch.sqrt(torch.mean(torch.pow(z_pred - z, 2)))
+def rmse(z_true, z_pred):
+    return torch.sqrt(torch.mean(torch.pow(z_pred - z_true, 2)))
 
 
 # https://www.johndcook.com/blog/2008/04/24/how-to-calculate-binomial-probabilities/
@@ -60,8 +53,25 @@ if __name__ == '__main__':
     z = data['z']
     v = data['v']
     p = data['p']
+    enc_x = data['enc_x']
+    enc_z = data['enc_z']
+    dec_x = data['dec_x']
+    dec_z = data['dec_z']
+    dec_v = data['dec_v']
 
     dataset = DefaultDataset(x, z, v, p)
+
+    enc_x = torch.from_numpy(enc_x).float()
+    enc_z = torch.from_numpy(enc_z).float()
+    dec_x = torch.from_numpy(dec_x).float()
+    dec_z = torch.from_numpy(dec_z).float()
+    dec_v = torch.from_numpy(dec_v).float()
+    if settings.USE_CUDA:
+        enc_x = enc_x.cuda()
+        enc_z = enc_z.cuda()
+        dec_x = dec_x.cuda()
+        dec_z = dec_z.cuda()
+        dec_v = dec_v.cuda()
 
     loader = DataLoader(
         dataset=dataset,
@@ -89,14 +99,13 @@ if __name__ == '__main__':
                 z = z.cuda()
                 v = v.cuda()
 
+            z_pred = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
+            print('rmse', rmse(dec_z, z_pred))
+
             m, a = model(x, v)
 
             loss = neg_bin_loss(z, m, a)
-            print('rmse', rmse(
-                z.cpu(),
-                m.cpu(),
-                a.cpu()
-            ))
+
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
