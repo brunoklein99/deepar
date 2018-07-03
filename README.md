@@ -28,4 +28,8 @@ Since the paper does not provide quantitative results, we ran the tests with the
 
 Notice, however, that these metrics are taken computing the ground truths in relation to the average of 50 _samples_
 
-Our implementation is able to achieve RMSE 0.9215
+Our implementation is able to achieve **RMSE 0.9215**
+
+#### Validation RMSE at each mini batch of the single epoch
+
+![](https://i.imgur.com/PgGftAE.png)
