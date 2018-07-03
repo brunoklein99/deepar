@@ -3,6 +3,7 @@ import torch
 from torch import optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 
 import settings
 from DefaultDataset import DefaultDataset
@@ -21,6 +22,11 @@ def load_model(filename):
 
 def rmse(z_true, z_pred):
     return float(torch.sqrt(torch.mean(torch.pow(z_pred - z_true, 2))))
+
+
+def plot(results):
+    plt.plot(range(len(results)), results)
+    plt.show()
 
 
 # https://www.johndcook.com/blog/2008/04/24/how-to-calculate-binomial-probabilities/
@@ -87,6 +93,7 @@ if __name__ == '__main__':
 
     optimizer = optim.Adam(model.parameters(), lr=settings.LEARNING_RATE)
 
+    results = []
     for epoch in range(settings.EPOCHS):
         for i, (x, z, v) in enumerate(loader):
             x = Variable(x)
@@ -99,7 +106,9 @@ if __name__ == '__main__':
                 v = v.cuda()
 
             z_pred = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
-            print('rmse', rmse(dec_z, z_pred))
+            result = rmse(dec_z, z_pred)
+            results.append(result)
+            print('rmse', result)
 
             m, a = model(x, v)
 
@@ -112,6 +121,8 @@ if __name__ == '__main__':
             print('epoch {} batch {}/{} loss: {}'.format(epoch, i, len(loader), loss))
 
     save_model('models/1', model)
+
+    plot(results)
 
     model.eval()
 
