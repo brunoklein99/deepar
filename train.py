@@ -3,12 +3,11 @@ import torch
 from torch import optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-from torch.distributions import Poisson, Gamma
 
 import settings
 from DefaultDataset import DefaultDataset
 from data_load import load_parts
-from model import Net, _sample
+from model import Net
 
 
 def save_model(filename, model):
@@ -21,7 +20,7 @@ def load_model(filename):
 
 
 def rmse(z_true, z_pred):
-    return torch.sqrt(torch.mean(torch.pow(z_pred - z_true, 2)))
+    return float(torch.sqrt(torch.mean(torch.pow(z_pred - z_true, 2))))
 
 
 # https://www.johndcook.com/blog/2008/04/24/how-to-calculate-binomial-probabilities/
@@ -113,3 +112,15 @@ if __name__ == '__main__':
             print('epoch {} batch {}/{} loss: {}'.format(epoch, i, len(loader), loss))
 
     save_model('models/1', model)
+
+    model.eval()
+
+    Z = []
+    for i in range(50):
+        z = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
+        z = z.numpy()
+        z = np.expand_dims(z, axis=0)
+        Z.append(z)
+    Z = np.concatenate(Z)
+    Z = np.mean(Z, axis=0)
+    print('rmse', rmse(dec_z, Z))
