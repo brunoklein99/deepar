@@ -1,20 +1,11 @@
+from abc import abstractmethod
+
 from torch.distributions import Gamma, Poisson
 
 import settings
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-
-def _sample(m, a):
-    r = 1 / a
-    p = (m * a) / (1 + (m * a))
-    b = (1 - p) / p
-    g = Gamma(r, b)
-    g = g.sample()
-    p = Poisson(g)
-    z = p.sample()
-    return z
 
 
 class Net(nn.Module):
@@ -36,12 +27,13 @@ class Net(nn.Module):
             out_features=1
         )
 
+    @abstractmethod
     def forward_ma(self, o, v):
-        m = F.softplus(self.linear_m(o))
-        a = F.softplus(self.linear_a(o))
-        m = torch.mul(m, v)
-        a = torch.div(a, torch.sqrt(v))
-        return m, a
+        pass
+
+    @abstractmethod
+    def sample(self, m, a):
+        pass
 
     def forward(self, x, v):
         o, (_, _) = self.cell(x)
@@ -62,8 +54,28 @@ class Net(nn.Module):
             x = torch.cat((z, x), 2)
             o, (h, c) = self.cell(x, (h, c))
             m, a = self.forward_ma(o, v)
-            z = _sample(m, a)
+            z = self.sample(m, a)
             Z.append(z)
             z = z / v
         Z = torch.cat(Z, 1)
         return Z
+
+
+class NegBinNet(Net):
+
+    def sample(self, m, a):
+        r = 1 / a
+        p = (m * a) / (1 + (m * a))
+        b = (1 - p) / p
+        g = Gamma(r, b)
+        g = g.sample()
+        p = Poisson(g)
+        z = p.sample()
+        return z
+
+    def forward_ma(self, o, v):
+        m = F.softplus(self.linear_m(o))
+        a = F.softplus(self.linear_a(o))
+        m = torch.mul(m, v)
+        a = torch.div(a, torch.sqrt(v))
+        return m, a

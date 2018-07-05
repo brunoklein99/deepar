@@ -1,14 +1,14 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch import optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
 
 import settings
 from DefaultDataset import DefaultDataset
 from data_load import load_parts
-from model import Net
+from model import NegBinNet
 
 
 def save_model(filename, model):
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     )
 
     _, _, x_dim = x.shape
-    model = Net(x_dim)
+    model = NegBinNet(x_dim)
     if settings.USE_CUDA:
         model = model.cuda()
 
