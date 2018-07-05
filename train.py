@@ -29,24 +29,6 @@ def plot(results):
     plt.show()
 
 
-# https://www.johndcook.com/blog/2008/04/24/how-to-calculate-binomial-probabilities/
-def neg_bin_loss(z, mean, alpha):
-    r = 1 / alpha
-    ma = mean * alpha
-    pdf = torch.lgamma(z + r)
-    pdf -= torch.lgamma(z + 1)
-    pdf -= torch.lgamma(r)
-    pdf += r * torch.log(1 / (1 + ma))
-    pdf += z * torch.log(ma / (1 + ma))
-    pdf = torch.exp(pdf)
-
-    loss = torch.log(pdf)
-    loss = torch.sum(loss)
-    loss = - loss
-
-    return loss
-
-
 if __name__ == '__main__':
 
     np.random.seed(101)
@@ -112,7 +94,7 @@ if __name__ == '__main__':
 
             m, a = model(x, v)
 
-            loss = neg_bin_loss(z, m, a)
+            loss = model.loss(z, m, a)
 
             optimizer.zero_grad()
             loss.backward()

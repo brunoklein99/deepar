@@ -35,6 +35,10 @@ class Net(nn.Module):
     def sample(self, m, a):
         pass
 
+    @abstractmethod
+    def loss(self, z, m, a):
+        pass
+
     def forward(self, x, v):
         o, (_, _) = self.cell(x)
         m, a = self.forward_ma(o, v)
@@ -62,6 +66,23 @@ class Net(nn.Module):
 
 
 class NegBinNet(Net):
+
+    # https://www.johndcook.com/blog/2008/04/24/how-to-calculate-binomial-probabilities/
+    def loss(self, z, mean, alpha):
+        r = 1 / alpha
+        ma = mean * alpha
+        pdf = torch.lgamma(z + r)
+        pdf -= torch.lgamma(z + 1)
+        pdf -= torch.lgamma(r)
+        pdf += r * torch.log(1 / (1 + ma))
+        pdf += z * torch.log(ma / (1 + ma))
+        pdf = torch.exp(pdf)
+
+        loss = torch.log(pdf)
+        loss = torch.sum(loss)
+        loss = - loss
+
+        return loss
 
     def sample(self, m, a):
         r = 1 / a
