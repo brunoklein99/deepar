@@ -109,15 +109,16 @@ class GaussianNet(Net):
         v = a * a
         t1 = 2 * pi * v
         t1 = torch.pow(t1, -1 / 2)
+        t1 = torch.log(t1)
 
         t2 = z - m
         t2 = torch.pow(t2, 2)
         t2 = - t2
         t2 = t2 / (2 * v)
-        t2 = torch.exp(t2)
 
-        loss = t1 * t2
-        loss = torch.log(loss)
+        loss = t1 + t2
+        # loss = torch.exp(loss)
+        # loss = torch.log(loss)
         loss = torch.sum(loss)
         loss = -loss
 
