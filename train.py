@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch import optim
@@ -24,9 +24,9 @@ def rmse(z_true, z_pred):
     return float(torch.sqrt(torch.mean(torch.pow(z_pred - z_true, 2))))
 
 
-def plot(results):
-    plt.plot(range(len(results)), results)
-    plt.show()
+# def plot(results):
+#     plt.plot(range(len(results)), results)
+#     plt.show()
 
 
 if __name__ == '__main__':
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
     save_model('models/1', model)
 
-    plot(results)
+    # plot(results)
 
     model.eval()
 
