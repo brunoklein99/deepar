@@ -28,29 +28,40 @@ def get_keep_indexes(x):
     return indexes
 
 
-def get_x_z_at_i_t(s, v, datetime_offset: datetime.datetime, i: int, t: int):
+def get_x_z_at_i_t(s, v, datetime_offset: datetime.datetime, i: int, t: int, gran):
     x = []
     _, T = s.shape
     x.append(s[i, t - 1] / v[i])
     x.append(t / T)
-    d = datetime_offset + relativedelta(months=t)
-    x.append(sin(2 * pi * ((d.month - 1) / 11)))
-    x.append(cos(2 * pi * ((d.month - 1) / 11)))
+    d = datetime_offset
+    if gran == 'm':
+        d += relativedelta(months=t)
+        x.append(sin(2 * pi * ((d.month - 1) / 11)))
+        x.append(cos(2 * pi * ((d.month - 1) / 11)))
+    elif gran == 'h':
+        d += relativedelta(hours=t)
+        x.append(sin(2 * pi * (d.hour / 23)))
+        x.append(cos(2 * pi * (d.hour / 23)))
+        weekday = d.weekday()
+        x.append(sin(2 * pi * (weekday / 6)))
+        x.append(cos(2 * pi * (weekday / 6)))
+    else:
+        raise Exception('gran not supported')
     z = s[i, t]
     return x, z
 
 
-def get_window_x_z_at_i_t(s, v, datetime_offset: datetime.datetime, i: int, t_window: int, window_len: int):
+def get_window_x_z_at_i_t(s, v, datetime_offset: datetime.datetime, i: int, t_window: int, window_len: int, gran):
     X = []
     Z = []
     for t in range(t_window, t_window + window_len):
-        x, z = get_x_z_at_i_t(s, v, datetime_offset, i, t)
+        x, z = get_x_z_at_i_t(s, v, datetime_offset, i, t, gran)
         X.append(x)
         Z.append([z])
     return X, Z
 
 
-def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int):
+def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int, gran='m'):
     assert len(s) == len(v)
     X = []
     Z = []
@@ -59,7 +70,7 @@ def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int
 
     for i in range(N):
         for t in range(t_offset, t_offset + length - window_length + 1):
-            x, z = get_window_x_z_at_i_t(s, v, datetime_offset, i, t, window_length)
+            x, z = get_window_x_z_at_i_t(s, v, datetime_offset, i, t, window_length, gran)
             X.append(x)
             Z.append(z)
             V.append([v[i]])
@@ -71,7 +82,7 @@ def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int
     return X, Z, V
 
 
-def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int, count: int):
+def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int, count: int, gran='m'):
     assert len(s) == len(v)
     X = []
     Z = []
@@ -81,7 +92,7 @@ def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, l
     for c in range(count):
         i = randint(0, len(s) - 1)
         t = randint(t_offset, t_offset + length - window_length + 1)
-        x, z = get_window_x_z_at_i_t(s, v, datetime_offset, i, t, window_length)
+        x, z = get_window_x_z_at_i_t(s, v, datetime_offset, i, t, window_length, gran)
         X.append(x)
         Z.append(z)
         V.append([v[i]])
@@ -144,6 +155,8 @@ def load_elec():
 
     v = 1 + np.mean(s[:, t1:t0], axis=1)
 
+    gran = 'h'
+
     x_train, z_train, v_train = get_x_z_subsample(
         s,
         v,
@@ -151,7 +164,8 @@ def load_elec():
         t_offset=t1,
         length=train_len,
         window_length=8,
-        count=500_000
+        count=500_000,
+        gran=gran
     )
 
     p = np.squeeze(v_train / np.sum(v_train))
@@ -164,6 +178,7 @@ def load_elec():
         t_offset=t_enc,
         length=enc_len,
         window_length=enc_len,
+        gran=gran
     )
 
     dec_x, dec_z, _ = get_x_z(
@@ -172,7 +187,8 @@ def load_elec():
         datetime_offset,
         t_offset=t0,
         length=dec_len,
-        window_length=dec_len
+        window_length=dec_len,
+        gran=gran
     )
 
     v = np.expand_dims(v, axis=-1)
