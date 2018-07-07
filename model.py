@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from math import pi
 
 from torch.distributions import Gamma, Poisson
 
@@ -99,4 +100,33 @@ class NegBinNet(Net):
         a = F.softplus(self.linear_a(o))
         m = torch.mul(m, v)
         a = torch.div(a, torch.sqrt(v))
+        return m, a
+
+
+class GaussianNet(Net):
+
+    def loss(self, z, m, a):
+        v = a * a
+        t1 = 2 * pi * v
+        t1 = torch.pow(t1, -1 / 2)
+
+        t2 = z - m
+        t2 = torch.pow(t2, 2)
+        t2 = - t2
+        t2 = t2 / (2 * v)
+        t2 = torch.exp(t2)
+
+        loss = t1 * t2
+        loss = -loss
+
+        return loss
+
+    def sample(self, m, a):
+        return torch.normal(m, a)
+
+    def forward_ma(self, o, v):
+        m = self.linear_m(o)
+        a = F.softplus(self.linear_a(o))
+        m = torch.mul(m, v)
+        a = torch.mul(a, v)
         return m, a
