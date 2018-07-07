@@ -117,6 +117,8 @@ class GaussianNet(Net):
         t2 = torch.exp(t2)
 
         loss = t1 * t2
+        loss = torch.log(loss)
+        loss = torch.sum(loss)
         loss = -loss
 
         return loss
