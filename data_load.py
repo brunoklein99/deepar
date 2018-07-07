@@ -1,4 +1,5 @@
 import datetime
+from random import randint
 
 import pandas as pd
 import numpy as np
@@ -70,6 +71,28 @@ def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int
     return X, Z, V
 
 
+def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int, count: int):
+    assert len(s) == len(v)
+    X = []
+    Z = []
+    V = []
+    N, _ = s.shape
+
+    for _ in range(count):
+        i = randint(0, len(s) - 1)
+        t = randint(t_offset, t_offset + length - window_length + 1)
+        x, z = get_window_x_z_at_i_t(s, v, datetime_offset, i, t, window_length)
+        X.append(x)
+        Z.append(z)
+        V.append([v[i]])
+
+    X = np.array(X)
+    Z = np.array(Z)
+    V = np.array(V)
+
+    return X, Z, V
+
+
 def get_parts_series():
     df = pd.read_csv('data/carparts.csv')
 
@@ -89,8 +112,86 @@ def get_parts_series():
     return datetime_offset, s
 
 
-def load_parts():
+def get_elec_series():
+    df = pd.read_csv('data/elec.csv')
 
+    datetime_offset = datetime.datetime(2000, 1, 1)
+
+    s = df.values.T
+
+    return datetime_offset, s
+
+
+def load_elec():
+    datetime_offset, s = get_elec_series()
+
+    _, T = s.shape
+
+    enc_len = 168
+    dec_len = 24
+    train_len = T - dec_len
+
+    # first t of the series
+    t1 = 1
+
+    # first t of prediction range
+    t0 = t1 + train_len
+
+    # first t of encoder (validation)
+    t_enc = t0 - enc_len
+
+    v = 1 + np.mean(s[:, t1:t0], axis=1)
+
+    x_train, z_train, v_train = get_x_z_subsample(
+        s,
+        v,
+        datetime_offset,
+        t_offset=t1,
+        length=train_len,
+        window_length=8,
+        count=500_000
+    )
+
+    p = np.squeeze(v_train / np.sum(v_train))
+    v_train = np.expand_dims(v_train, axis=-1)
+
+    enc_x, enc_z, _ = get_x_z(
+        s,
+        v,
+        datetime_offset,
+        t_offset=t_enc,
+        length=enc_len,
+        window_length=enc_len,
+    )
+
+    dec_x, dec_z, _ = get_x_z(
+        s,
+        v,
+        datetime_offset,
+        t_offset=t0,
+        length=dec_len,
+        window_length=dec_len
+    )
+
+    v = np.expand_dims(v, axis=-1)
+    v = np.expand_dims(v, axis=-1)
+
+    data = {
+        'x': x_train,
+        'z': z_train,
+        'v': v_train,
+        'p': p,
+        'enc_x': enc_x,
+        'enc_z': enc_z,
+        'dec_x': dec_x[:, :, 1:],
+        'dec_z': dec_z,
+        'dec_v': v,
+    }
+
+    return datetime_offset, data
+
+
+def load_parts():
     datetime_offset, s = get_parts_series()
 
     enc_len = 8
