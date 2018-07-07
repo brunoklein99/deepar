@@ -142,7 +142,7 @@ def load_elec():
 
     enc_len = 168
     dec_len = 24
-    train_len = T - dec_len
+    train_len = T - dec_len - 1
 
     # first t of the series
     t1 = 1
