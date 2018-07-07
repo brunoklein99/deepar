@@ -87,10 +87,11 @@ if __name__ == '__main__':
                 z = z.cuda()
                 v = v.cuda()
 
-            # z_pred = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
-            # result = rmse(dec_z, z_pred)
-            # results.append(result)
-            # print('rmse', result)
+            if i % 10 == 0:
+                z_pred = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
+                result = rmse(dec_z, z_pred)
+                results.append(result)
+                print('rmse', result)
 
             m, a = model(x, v)
 
