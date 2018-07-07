@@ -7,8 +7,8 @@ from torch.utils.data import DataLoader
 
 import settings
 from DefaultDataset import DefaultDataset
-from data_load import load_parts
-from model import NegBinNet
+from data_load import load_parts, load_elec
+from model import NegBinNet, GaussianNet
 
 
 def save_model(filename, model):
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     np.random.seed(101)
     torch.manual_seed(101)
 
-    _, data = load_parts()
+    _, data = load_elec()
 
     x = data['x']
     z = data['z']
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     )
 
     _, _, x_dim = x.shape
-    model = NegBinNet(x_dim)
+    model = GaussianNet(x_dim)
     if settings.USE_CUDA:
         model = model.cuda()
 
@@ -87,10 +87,10 @@ if __name__ == '__main__':
                 z = z.cuda()
                 v = v.cuda()
 
-            z_pred = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
-            result = rmse(dec_z, z_pred)
-            results.append(result)
-            print('rmse', result)
+            # z_pred = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
+            # result = rmse(dec_z, z_pred)
+            # results.append(result)
+            # print('rmse', result)
 
             m, a = model(x, v)
 
