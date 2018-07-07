@@ -78,13 +78,15 @@ def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, l
     V = []
     N, _ = s.shape
 
-    for _ in range(count):
+    for c in range(count):
         i = randint(0, len(s) - 1)
         t = randint(t_offset, t_offset + length - window_length + 1)
         x, z = get_window_x_z_at_i_t(s, v, datetime_offset, i, t, window_length)
         X.append(x)
         Z.append(z)
         V.append([v[i]])
+        if c % 1000 == 0:
+            print('sampling {}/{}'.format(c, count))
 
     X = np.array(X)
     Z = np.array(Z)
