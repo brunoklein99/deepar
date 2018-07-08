@@ -1,4 +1,6 @@
 # import matplotlib.pyplot as plt
+from random import seed
+
 import numpy as np
 import torch
 from torch import optim
@@ -33,6 +35,7 @@ if __name__ == '__main__':
 
     np.random.seed(101)
     torch.manual_seed(101)
+    seed(101)
 
     _, data = load_elec()
 
