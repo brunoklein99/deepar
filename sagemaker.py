@@ -47,7 +47,7 @@ if __name__ == '__main__':
     offset_valid = offset_train + relativedelta(hours=T - dec_len - enc_len)
 
     write_file('data/sagemaker_train.json', offset_train, s[:, :-dec_len])
-    # write_file('data/sagemaker_valid.json', offset_valid, s[:, -16:])
+    write_file('data/sagemaker_valid.json', offset_train, s)
     write_inference('data/inference.json', offset_valid, s[:, -(enc_len + dec_len):-dec_len])
 
     print('finished')
