@@ -1,14 +1,16 @@
+# import matplotlib.pyplot as plt
+from random import seed
+
 import numpy as np
 import torch
 from torch import optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
 
 import settings
 from DefaultDataset import DefaultDataset
-from data_load import load_parts
-from model import Net
+from data_load import load_parts, load_elec
+from model import NegBinNet, GaussianNet
 
 
 def save_model(filename, model):
@@ -24,35 +26,29 @@ def rmse(z_true, z_pred):
     return float(torch.sqrt(torch.mean(torch.pow(z_pred - z_true, 2))))
 
 
-def plot(results):
-    plt.plot(range(len(results)), results)
-    plt.show()
+def rmse_mean(enc_x, enc_z, dec_x, dec_v):
+    Z = []
+    for i in range(50):
+        z = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
+        z = z.cpu().detach().numpy()
+        z = np.expand_dims(z, axis=0)
+        Z.append(z)
+    Z = np.concatenate(Z)
+    Z = np.mean(Z, axis=0)
+    return rmse(dec_z, Z)
 
-
-# https://www.johndcook.com/blog/2008/04/24/how-to-calculate-binomial-probabilities/
-def neg_bin_loss(z, mean, alpha):
-    r = 1 / alpha
-    ma = mean * alpha
-    pdf = torch.lgamma(z + r)
-    pdf -= torch.lgamma(z + 1)
-    pdf -= torch.lgamma(r)
-    pdf += r * torch.log(1 / (1 + ma))
-    pdf += z * torch.log(ma / (1 + ma))
-    pdf = torch.exp(pdf)
-
-    loss = torch.log(pdf)
-    loss = torch.sum(loss)
-    loss = - loss
-
-    return loss
+# def plot(results):
+#     plt.plot(range(len(results)), results)
+#     plt.show()
 
 
 if __name__ == '__main__':
 
     np.random.seed(101)
     torch.manual_seed(101)
+    seed(101)
 
-    _, data = load_parts()
+    _, data = load_elec()
 
     x = data['x']
     z = data['z']
@@ -85,7 +81,7 @@ if __name__ == '__main__':
     )
 
     _, _, x_dim = x.shape
-    model = Net(x_dim)
+    model = GaussianNet(x_dim)
     if settings.USE_CUDA:
         model = model.cuda()
 
@@ -105,14 +101,11 @@ if __name__ == '__main__':
                 z = z.cuda()
                 v = v.cuda()
 
-            z_pred = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
-            result = rmse(dec_z, z_pred)
-            results.append(result)
-            print('rmse', result)
+            print('rmse valid', rmse_mean(enc_x, enc_z, dec_x, dec_v))
 
             m, a = model(x, v)
 
-            loss = neg_bin_loss(z, m, a)
+            loss = model.loss(z, m, a)
 
             optimizer.zero_grad()
             loss.backward()
@@ -122,16 +115,6 @@ if __name__ == '__main__':
 
     save_model('models/1', model)
 
-    plot(results)
+    # plot(results)
 
-    model.eval()
-
-    Z = []
-    for i in range(50):
-        z = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
-        z = z.numpy()
-        z = np.expand_dims(z, axis=0)
-        Z.append(z)
-    Z = np.concatenate(Z)
-    Z = np.mean(Z, axis=0)
-    print('rmse', rmse(dec_z, Z))
+    print('rmse final', rmse_mean(enc_x, enc_z, dec_x, dec_v))
