@@ -1,4 +1,6 @@
 # import matplotlib.pyplot as plt
+from random import seed
+
 import numpy as np
 import torch
 from torch import optim
@@ -24,6 +26,17 @@ def rmse(z_true, z_pred):
     return float(torch.sqrt(torch.mean(torch.pow(z_pred - z_true, 2))))
 
 
+def rmse_mean(enc_x, enc_z, dec_x, dec_v):
+    Z = []
+    for i in range(50):
+        z = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
+        z = z.cpu().detach().numpy()
+        z = np.expand_dims(z, axis=0)
+        Z.append(z)
+    Z = np.concatenate(Z)
+    Z = np.mean(Z, axis=0)
+    return rmse(dec_z, Z)
+
 # def plot(results):
 #     plt.plot(range(len(results)), results)
 #     plt.show()
@@ -33,6 +46,7 @@ if __name__ == '__main__':
 
     np.random.seed(101)
     torch.manual_seed(101)
+    seed(101)
 
     _, data = load_elec()
 
@@ -87,11 +101,7 @@ if __name__ == '__main__':
                 z = z.cuda()
                 v = v.cuda()
 
-            if i % 10 == 0:
-                z_pred = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
-                result = rmse(dec_z, z_pred)
-                results.append(result)
-                print('rmse', result)
+            print('rmse valid', rmse_mean(enc_x, enc_z, dec_x, dec_v))
 
             m, a = model(x, v)
 
@@ -107,14 +117,4 @@ if __name__ == '__main__':
 
     # plot(results)
 
-    model.eval()
-
-    Z = []
-    for i in range(50):
-        z = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
-        z = z.numpy()
-        z = np.expand_dims(z, axis=0)
-        Z.append(z)
-    Z = np.concatenate(Z)
-    Z = np.mean(Z, axis=0)
-    print('rmse', rmse(dec_z, Z))
+    print('rmse final', rmse_mean(enc_x, enc_z, dec_x, dec_v))
