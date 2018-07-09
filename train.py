@@ -90,6 +90,7 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=settings.LEARNING_RATE)
 
     results = []
+    rmse_valid_low = rmse_mean(enc_x, enc_z, dec_x, dec_v)
     for epoch in range(settings.EPOCHS):
         for i, (x, z, v) in enumerate(loader):
             x = Variable(x)
@@ -101,8 +102,6 @@ if __name__ == '__main__':
                 z = z.cuda()
                 v = v.cuda()
 
-            print('rmse valid', rmse_mean(enc_x, enc_z, dec_x, dec_v))
-
             m, a = model(x, v)
 
             loss = model.loss(z, m, a)
@@ -110,6 +109,13 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+            rmse_valid = rmse_mean(enc_x, enc_z, dec_x, dec_v)
+            if rmse_valid < rmse_valid_low:
+                rmse_valid_low = rmse_valid
+                save_model('models/{}-{}-{}'.format(epoch, i, int(rmse_valid)), model)
+                print('lowest rmse valid', rmse_valid)
+            print('rmse valid', rmse_valid)
 
             print('epoch {} batch {}/{} loss: {}'.format(epoch, i, len(loader), loss))
 
