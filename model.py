@@ -80,7 +80,7 @@ class NegBinNet(Net):
         pdf = torch.exp(pdf)
 
         loss = torch.log(pdf)
-        loss = torch.sum(loss)
+        loss = torch.mean(loss)
         loss = - loss
 
         return loss
@@ -119,7 +119,7 @@ class GaussianNet(Net):
         loss = t1 + t2
         # loss = torch.exp(loss)
         # loss = torch.log(loss)
-        loss = torch.sum(loss)
+        loss = torch.mean(loss)
         loss = -loss
 
         return loss
