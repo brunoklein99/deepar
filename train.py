@@ -113,7 +113,7 @@ if __name__ == '__main__':
             rmse_valid = rmse_mean(enc_x, enc_z, dec_x, dec_v)
             if rmse_valid < rmse_valid_low:
                 rmse_valid_low = rmse_valid
-                save_model('models/{}-{}-{:.2f}'.format(epoch, i, int(rmse_valid)), model)
+                save_model('models/{}-{}-{:.2f}'.format(epoch, i, rmse_valid), model)
                 print('lowest rmse valid', rmse_valid)
             print('rmse valid', rmse_valid)
 
