@@ -82,7 +82,8 @@ def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int
     return X, Z, V
 
 
-def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int, count: int, gran='m'):
+def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int,
+                      count: int, gran='m'):
     assert len(s) == len(v)
     X = []
     Z = []
@@ -133,6 +134,94 @@ def get_elec_series():
     s = df.values.T
 
     return datetime_offset, s
+
+
+def get_kaggle_series():
+    df = pd.read_csv('data/kaggle_train.csv')
+    series = []
+    for i in range(max(df['item'])):
+        for s in range(max(df['store'])):
+            serie = df.loc[(df['item'] == i + 1) & (df['store'] == s + 1)]
+            serie = list(serie['sales'])
+            assert len(serie) == 1826
+            series.append(serie)
+    series = np.array(series)
+    datetime_offset = datetime.datetime(2013, 1, 1)
+    return datetime_offset, series
+
+
+def load_kaggle():
+    datetime_offset, s = get_kaggle_series()
+
+    _, T = s.shape
+
+    enc_len = 270
+    dec_len = 90
+    train_len = T - dec_len - 1
+
+    # first t of the series
+    t1 = 1
+
+    # first t of prediction range
+    t0 = t1 + train_len
+
+    # first t of encoder (validation)
+    t_enc = t0 - enc_len
+
+    v = 1 + np.mean(s[:, t1:t0], axis=1)
+
+    gran = 'd'
+
+    x_train, z_train, v_train = get_x_z_subsample(
+        s,
+        v,
+        datetime_offset,
+        t_offset=t1,
+        length=train_len,
+        window_length=enc_len,
+        count=100_000,
+        gran=gran
+    )
+
+    p = np.squeeze(v_train / np.sum(v_train))
+    v_train = np.expand_dims(v_train, axis=-1)
+
+    enc_x, enc_z, _ = get_x_z(
+        s,
+        v,
+        datetime_offset,
+        t_offset=t_enc,
+        length=enc_len,
+        window_length=enc_len,
+        gran=gran
+    )
+
+    dec_x, dec_z, _ = get_x_z(
+        s,
+        v,
+        datetime_offset,
+        t_offset=t0,
+        length=dec_len,
+        window_length=dec_len,
+        gran=gran
+    )
+
+    v = np.expand_dims(v, axis=-1)
+    v = np.expand_dims(v, axis=-1)
+
+    data = {
+        'x': x_train,
+        'z': z_train,
+        'v': v_train,
+        'p': p,
+        'enc_x': enc_x,
+        'enc_z': enc_z,
+        'dec_x': dec_x[:, :, 1:],
+        'dec_z': dec_z,
+        'dec_v': v,
+    }
+
+    return datetime_offset, data
 
 
 def load_elec():
