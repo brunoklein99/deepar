@@ -45,6 +45,25 @@ def get_x_z_at_i_t(s, v, datetime_offset: datetime.datetime, i: int, t: int, gra
         weekday = d.weekday()
         x.append(sin(2 * pi * (weekday / 6)))
         x.append(cos(2 * pi * (weekday / 6)))
+    elif gran == 'd':
+        d += relativedelta(days=t)
+        x.append(sin(2 * pi * ((d.day - 1) / 30)))
+        x.append(cos(2 * pi * ((d.day - 1) / 30)))
+        weekday = d.weekday()
+        x.append(sin(2 * pi * (weekday / 6)))
+        x.append(cos(2 * pi * (weekday / 6)))
+        shop_idx = (i - 1) // 50
+        item_idx = (i - 1) // 10
+        for idx in range(10):
+            if idx == shop_idx:
+                x.append(1.0)
+            else:
+                x.append(0.0)
+        for idx in range(50):
+            if idx == item_idx:
+                x.append(1.0)
+            else:
+                x.append(0.0)
     else:
         raise Exception('gran not supported')
     z = s[i, t]
@@ -178,7 +197,7 @@ def load_kaggle():
         datetime_offset,
         t_offset=t1,
         length=train_len,
-        window_length=enc_len,
+        window_length=enc_len + dec_len,
         count=100_000,
         gran=gran
     )
