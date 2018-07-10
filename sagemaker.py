@@ -2,7 +2,7 @@ import json
 
 from dateutil.relativedelta import relativedelta
 
-from data_load import get_parts_series, get_elec_series
+from data_load import get_parts_series, get_elec_series, get_elem_series
 
 
 def write_inference(filename, datetime_offset, s):
@@ -37,14 +37,14 @@ def write_file(filename, datetime_offset, s):
 
 
 if __name__ == '__main__':
-    offset_train, s = get_elec_series()
+    offset_train, s = get_elem_series()
 
     _, T = s.shape
 
-    enc_len = 168
-    dec_len = 24
+    enc_len = 217
+    dec_len = 31
 
-    offset_valid = offset_train + relativedelta(hours=T - dec_len - enc_len)
+    offset_valid = offset_train + relativedelta(days=T - dec_len - enc_len)
 
     write_file('data/sagemaker_train.json', offset_train, s[:, :-dec_len])
     write_file('data/sagemaker_valid.json', offset_train, s)

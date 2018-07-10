@@ -1,12 +1,12 @@
 import json
 import numpy as np
 
-from data_load import get_elec_series
+from data_load import get_elem_series
 
 if __name__ == '__main__':
     with open('data/output.json') as f:
-        _, s = get_elec_series()
-        true = s[:, -24:]
+        _, s = get_elem_series()
+        true = s[:, -31:]
         j = json.load(f)
         j = j['predictions']
         pred = []

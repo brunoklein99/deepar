@@ -1,4 +1,5 @@
 import datetime
+import json
 from random import randint
 
 import pandas as pd
@@ -45,6 +46,13 @@ def get_x_z_at_i_t(s, v, datetime_offset: datetime.datetime, i: int, t: int, gra
         weekday = d.weekday()
         x.append(sin(2 * pi * (weekday / 6)))
         x.append(cos(2 * pi * (weekday / 6)))
+    elif gran == 'd':
+        d += relativedelta(days=t)
+        x.append(sin(2 * pi * ((d.day - 1) / 30)))
+        x.append(cos(2 * pi * ((d.day - 1) / 30)))
+        weekday = d.weekday()
+        x.append(sin(2 * pi * (weekday / 6)))
+        x.append(cos(2 * pi * (weekday / 6)))
     else:
         raise Exception('gran not supported')
     z = s[i, t]
@@ -82,7 +90,8 @@ def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int
     return X, Z, V
 
 
-def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int, count: int, gran='m'):
+def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int,
+                      count: int, gran='m'):
     assert len(s) == len(v)
     X = []
     Z = []
@@ -104,6 +113,21 @@ def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, l
     V = np.array(V)
 
     return X, Z, V
+
+
+def get_elem_series():
+    s = []
+    with open('data/elementia.json') as f:
+        for l in f.readlines():
+            j = json.loads(l)
+            s.append(j['target'])
+
+    s = np.array(s)
+    s[s < 0] = 0
+
+    datetime_offset = datetime.datetime(2015, 7, 1)
+
+    return datetime_offset, s
 
 
 def get_parts_series():
@@ -133,6 +157,80 @@ def get_elec_series():
     s = df.values.T
 
     return datetime_offset, s
+
+
+def load_elem():
+    datetime_offset, s = get_elem_series()
+
+    _, T = s.shape
+
+    enc_len = 217
+    dec_len = 31
+    train_len = T - dec_len - 1
+
+    # first t of the series
+    t1 = 1
+
+    # first t of prediction range
+    t0 = t1 + train_len
+
+    # first t of encoder (validation)
+    t_enc = t0 - enc_len
+
+    v = 1 + np.mean(s[:, t1:t0], axis=1)
+
+    gran = 'd'
+
+    x_train, z_train, v_train = get_x_z_subsample(
+        s,
+        v,
+        datetime_offset,
+        t_offset=t1,
+        length=train_len,
+        window_length=enc_len + dec_len,
+        count=100_000,
+        gran=gran
+    )
+
+    p = np.squeeze(v_train / np.sum(v_train))
+    v_train = np.expand_dims(v_train, axis=-1)
+
+    enc_x, enc_z, _ = get_x_z(
+        s,
+        v,
+        datetime_offset,
+        t_offset=t_enc,
+        length=enc_len,
+        window_length=enc_len,
+        gran=gran
+    )
+
+    dec_x, dec_z, _ = get_x_z(
+        s,
+        v,
+        datetime_offset,
+        t_offset=t0,
+        length=dec_len,
+        window_length=dec_len,
+        gran=gran
+    )
+
+    v = np.expand_dims(v, axis=-1)
+    v = np.expand_dims(v, axis=-1)
+
+    data = {
+        'x': x_train,
+        'z': z_train,
+        'v': v_train,
+        'p': p,
+        'enc_x': enc_x,
+        'enc_z': enc_z,
+        'dec_x': dec_x[:, :, 1:],
+        'dec_z': dec_z,
+        'dec_v': v,
+    }
+
+    return datetime_offset, data
 
 
 def load_elec():

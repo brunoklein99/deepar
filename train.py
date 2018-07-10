@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 
 import settings
 from DefaultDataset import DefaultDataset
-from data_load import load_parts, load_elec
+from data_load import load_parts, load_elec, load_elem
 from model import NegBinNet, GaussianNet
 
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     torch.manual_seed(101)
     seed(101)
 
-    _, data = load_elec()
+    _, data = load_elem()
 
     x = data['x']
     z = data['z']
