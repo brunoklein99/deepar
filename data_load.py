@@ -163,7 +163,7 @@ def load_elec():
         datetime_offset,
         t_offset=t1,
         length=train_len,
-        window_length=8,
+        window_length=enc_len,
         count=500_000,
         gran=gran
     )
