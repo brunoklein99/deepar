@@ -236,6 +236,15 @@ def load_kaggle():
         gran=gran
     )
 
+    test_enc_x, test_enc_z, _ = get_x_z(
+        meta,
+        v,
+        datetime_offset,
+        t_offset=T - enc_len,
+        length=enc_len,
+        window_length=enc_len,
+        gran=gran
+    )
     v = np.expand_dims(v, axis=-1)
     v = np.expand_dims(v, axis=-1)
 
