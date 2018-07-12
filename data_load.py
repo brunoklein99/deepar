@@ -33,7 +33,7 @@ def get_x_z_at_i_t(meta, v, datetime_offset: datetime.datetime, i: int, t: int, 
     x = []
     _, T = s.shape
     x.append(s[i, t - 1] / v[i])
-    x.append(t / T)
+    # x.append(t / T)
     d = datetime_offset
     if gran == 'm':
         d += relativedelta(months=t)
@@ -87,12 +87,15 @@ def get_x_z(meta, v, datetime_offset: datetime.datetime, t_offset: int, length: 
     V = []
     N, _ = s.shape
 
+    t_end = t_offset + length - window_length + 1
     for i in range(N):
-        for t in range(t_offset, t_offset + length - window_length + 1):
+        for t in range(t_offset, t_end):
             x, z = get_window_x_z_at_i_t(meta, v, datetime_offset, i, t, window_length, gran)
             X.append(x)
             Z.append(z)
             V.append([v[i]])
+            if t % 10 == 0:
+                print('i {}/{} t {}/{}'.format(i, N, t, t_end))
 
     X = np.array(X)
     Z = np.array(Z)
@@ -209,8 +212,8 @@ def load_kaggle():
         t_offset=t1,
         length=train_len,
         window_length=enc_len + dec_len,
-        count=1_000,
-        gran=gran
+        gran=gran,
+        count=1_000
     )
 
     p = np.squeeze(v_train / np.sum(v_train))
