@@ -28,7 +28,8 @@ def get_keep_indexes(x):
     return indexes
 
 
-def get_x_z_at_i_t(s, v, datetime_offset: datetime.datetime, i: int, t: int, gran):
+def get_x_z_at_i_t(meta, v, datetime_offset: datetime.datetime, i: int, t: int, gran):
+    s = meta['series']
     x = []
     _, T = s.shape
     x.append(s[i, t - 1] / v[i])
@@ -52,15 +53,13 @@ def get_x_z_at_i_t(s, v, datetime_offset: datetime.datetime, i: int, t: int, gra
         weekday = d.weekday()
         x.append(sin(2 * pi * (weekday / 6)))
         x.append(cos(2 * pi * (weekday / 6)))
-        shop_idx = (i - 1) // 50
-        item_idx = (i - 1) // 10
         for idx in range(10):
-            if idx == shop_idx:
+            if idx == meta['shops'][i]:
                 x.append(1.0)
             else:
                 x.append(0.0)
         for idx in range(50):
-            if idx == item_idx:
+            if idx == meta['items'][i]:
                 x.append(1.0)
             else:
                 x.append(0.0)
@@ -70,17 +69,18 @@ def get_x_z_at_i_t(s, v, datetime_offset: datetime.datetime, i: int, t: int, gra
     return x, z
 
 
-def get_window_x_z_at_i_t(s, v, datetime_offset: datetime.datetime, i: int, t_window: int, window_len: int, gran):
+def get_window_x_z_at_i_t(meta, v, datetime_offset: datetime.datetime, i: int, t_window: int, window_len: int, gran):
     X = []
     Z = []
     for t in range(t_window, t_window + window_len):
-        x, z = get_x_z_at_i_t(s, v, datetime_offset, i, t, gran)
+        x, z = get_x_z_at_i_t(meta, v, datetime_offset, i, t, gran)
         X.append(x)
         Z.append([z])
     return X, Z
 
 
-def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int, gran='m'):
+def get_x_z(meta, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int, gran='m'):
+    s = meta['series']
     assert len(s) == len(v)
     X = []
     Z = []
@@ -89,7 +89,7 @@ def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int
 
     for i in range(N):
         for t in range(t_offset, t_offset + length - window_length + 1):
-            x, z = get_window_x_z_at_i_t(s, v, datetime_offset, i, t, window_length, gran)
+            x, z = get_window_x_z_at_i_t(meta, v, datetime_offset, i, t, window_length, gran)
             X.append(x)
             Z.append(z)
             V.append([v[i]])
@@ -101,8 +101,8 @@ def get_x_z(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int
     return X, Z, V
 
 
-def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int,
-                      count: int, gran='m'):
+def get_x_z_subsample(meta, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int, count: int, gran='m'):
+    s = meta['series']
     assert len(s) == len(v)
     X = []
     Z = []
@@ -112,7 +112,7 @@ def get_x_z_subsample(s, v, datetime_offset: datetime.datetime, t_offset: int, l
     for c in range(count):
         i = randint(0, len(s) - 1)
         t = randint(t_offset, t_offset + length - window_length + 1)
-        x, z = get_window_x_z_at_i_t(s, v, datetime_offset, i, t, window_length, gran)
+        x, z = get_window_x_z_at_i_t(meta, v, datetime_offset, i, t, window_length, gran)
         X.append(x)
         Z.append(z)
         V.append([v[i]])
@@ -158,23 +158,34 @@ def get_elec_series():
 def get_kaggle_series():
     df = pd.read_csv('data/kaggle_train.csv')
     series = []
+    items = []
+    shops = []
     for i in range(max(df['item'])):
         for s in range(max(df['store'])):
             serie = df.loc[(df['item'] == i + 1) & (df['store'] == s + 1)]
             serie = list(serie['sales'])
             assert len(serie) == 1826
             series.append(serie)
+            items.append(i)
+            shops.append(s)
     series = np.array(series)
     datetime_offset = datetime.datetime(2013, 1, 1)
-    return datetime_offset, series
+    meta = {
+        'series': series,
+        'items': items,
+        'shops': shops
+    }
+    return datetime_offset, meta
 
 
 def load_kaggle():
-    datetime_offset, s = get_kaggle_series()
+    datetime_offset, meta = get_kaggle_series()
+
+    s = meta['series']
 
     _, T = s.shape
 
-    enc_len = 270
+    enc_len = 90
     dec_len = 90
     train_len = T - dec_len - 1
 
@@ -192,13 +203,13 @@ def load_kaggle():
     gran = 'd'
 
     x_train, z_train, v_train = get_x_z_subsample(
-        s,
+        meta,
         v,
         datetime_offset,
         t_offset=t1,
         length=train_len,
         window_length=enc_len + dec_len,
-        count=100_000,
+        count=1_000,
         gran=gran
     )
 
@@ -206,7 +217,7 @@ def load_kaggle():
     v_train = np.expand_dims(v_train, axis=-1)
 
     enc_x, enc_z, _ = get_x_z(
-        s,
+        meta,
         v,
         datetime_offset,
         t_offset=t_enc,
@@ -216,7 +227,7 @@ def load_kaggle():
     )
 
     dec_x, dec_z, _ = get_x_z(
-        s,
+        meta,
         v,
         datetime_offset,
         t_offset=t0,
