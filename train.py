@@ -45,11 +45,7 @@ def rmse_mean(enc_x, enc_z, dec_x, dec_v):
 
 
 def smape(f, a):
-    n = np.abs(f - a)
-    d = np.abs(a) + np.abs(f)
-    s = n / d
-    s = np.mean(s)
-    return s
+    return np.mean(2 * np.abs(a - f) / (np.abs(a) + np.abs(f)))
 
 
 # def plot(results):
@@ -62,7 +58,7 @@ def write_submission(filename, z):
         idx = 0
         for i in range(N):
             for t in range(T):
-                f.write('{},{}\n'.format(idx, int(z[i, t])))
+                f.write('{},{}\n'.format(idx, float(z[i, t])))
                 idx += 1
 
 
@@ -153,7 +149,6 @@ if __name__ == '__main__':
                 dec_v
             )
 
-            test_dec_z = np.round(test_dec_z)
             write_submission('submissions/submission-{:2f}.csv'.format(metric), test_dec_z)
 
             optimizer.zero_grad()
