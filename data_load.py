@@ -188,7 +188,7 @@ def load_kaggle():
 
     N, T = s.shape
 
-    enc_len = 90
+    enc_len = 180
     dec_len = 90
     train_len = T - dec_len - 1
 

@@ -16,9 +16,9 @@ class DefaultDataset(data.Dataset):
     def __len__(self):
         return len(self.x)
 
-    def __getitem__(self, _):
-        r = range(len(self.x))
-        i = np.random.choice(r, p=self.p)
+    def __getitem__(self, i):
+        # r = range(len(self.x))
+        # i = np.random.choice(r, p=self.p)
         x = torch.from_numpy(self.x[i, :, :]).float()
         z = torch.from_numpy(self.z[i, :, :]).float()
         v = torch.from_numpy(self.v[i, :, :]).float()
