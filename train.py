@@ -78,6 +78,9 @@ if __name__ == '__main__':
     dec_x = data['dec_x']
     dec_z = data['dec_z']
     dec_v = data['dec_v']
+    test_enc_x = data['test_enc_x']
+    test_enc_z = data['test_enc_z']
+    test_dec_x = data['test_dec_x']
 
     dataset = DefaultDataset(x, z, v, p)
 
