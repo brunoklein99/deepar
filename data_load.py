@@ -190,18 +190,8 @@ def load_kaggle():
 
     enc_len = 90
     dec_len = 90
-    train_len = T - dec_len - 1
 
-    # first t of the series
-    t1 = 1
-
-    # first t of prediction range
-    t0 = t1 + train_len
-
-    # first t of encoder (validation)
-    t_enc = t0 - enc_len
-
-    v = 1 + np.mean(s[:, t1:t0], axis=1)
+    v = 1 + np.mean(s[:, 0:T], axis=1)
 
     gran = 'd'
 
@@ -209,35 +199,35 @@ def load_kaggle():
         meta,
         v,
         datetime_offset,
-        t_offset=t1,
-        length=train_len,
+        t_offset=1,
+        length=T - 2,
         window_length=enc_len + dec_len,
         gran=gran,
-        count=1_000
+        count=5_000
     )
 
     p = np.squeeze(v_train / np.sum(v_train))
     v_train = np.expand_dims(v_train, axis=-1)
 
-    enc_x, enc_z, _ = get_x_z(
-        meta,
-        v,
-        datetime_offset,
-        t_offset=t_enc,
-        length=enc_len,
-        window_length=enc_len,
-        gran=gran
-    )
+    # enc_x, enc_z, _ = get_x_z(
+    #     meta,
+    #     v,
+    #     datetime_offset,
+    #     t_offset=t_enc,
+    #     length=enc_len,
+    #     window_length=enc_len,
+    #     gran=gran
+    # )
 
-    dec_x, dec_z, _ = get_x_z(
-        meta,
-        v,
-        datetime_offset,
-        t_offset=t0,
-        length=dec_len,
-        window_length=dec_len,
-        gran=gran
-    )
+    # dec_x, dec_z, _ = get_x_z(
+    #     meta,
+    #     v,
+    #     datetime_offset,
+    #     t_offset=t0,
+    #     length=dec_len,
+    #     window_length=dec_len,
+    #     gran=gran
+    # )
 
     test_enc_x, test_enc_z, _ = get_x_z(
         meta,
@@ -276,10 +266,10 @@ def load_kaggle():
         'z': z_train,
         'v': v_train,
         'p': p,
-        'enc_x': enc_x,
-        'enc_z': enc_z,
-        'dec_x': dec_x[:, :, 1:],
-        'dec_z': dec_z,
+        # 'enc_x': enc_x,
+        # 'enc_z': enc_z,
+        # 'dec_x': dec_x[:, :, 1:],
+        # 'dec_z': dec_z,
         'dec_v': v,
         'test_enc_x': test_enc_x,
         'test_enc_z': test_enc_z,
