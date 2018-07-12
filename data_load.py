@@ -183,7 +183,7 @@ def load_kaggle():
 
     s = meta['series']
 
-    _, T = s.shape
+    N, T = s.shape
 
     enc_len = 90
     dec_len = 90
@@ -245,6 +245,26 @@ def load_kaggle():
         window_length=enc_len,
         gran=gran
     )
+
+    # mock series, just to build input features of the prediction range
+    s = np.random.randn(N, T + dec_len)
+
+    meta = {
+        'series': s,
+        'items': meta['items'],
+        'shops': meta['shops']
+    }
+
+    test_dec_x, _, _ = get_x_z(
+        meta,
+        v,
+        datetime_offset,
+        t_offset=T,
+        length=dec_len,
+        window_length=dec_len,
+        gran=gran
+    )
+
     v = np.expand_dims(v, axis=-1)
     v = np.expand_dims(v, axis=-1)
 
@@ -258,6 +278,9 @@ def load_kaggle():
         'dec_x': dec_x[:, :, 1:],
         'dec_z': dec_z,
         'dec_v': v,
+        'test_enc_x': test_enc_x,
+        'test_enc_z': test_enc_z,
+        'test_dec_x': test_dec_x[:, :, 1:]
     }
 
     return datetime_offset, data
