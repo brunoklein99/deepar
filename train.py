@@ -3,15 +3,14 @@ from random import seed
 
 import numpy as np
 import torch
-from dateutil import relativedelta
 from torch import optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 import settings
 from DefaultDataset import DefaultDataset
-from data_load import load_parts, load_elec, load_kaggle
-from model import NegBinNet, GaussianNet
+from data_load import load_kaggle
+from model import GaussianNet, NegBinNet
 
 
 def save_model(filename, model):
@@ -31,11 +30,10 @@ def pred(enc_x, enc_z, dec_x, dec_v):
     Z = []
     for i in range(5):
         z = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
-        z = z.detach().numpy()
-        z = np.expand_dims(z, axis=0)
+        z = z.unsqueeze(0)
         Z.append(z)
-    Z = np.concatenate(Z)
-    Z = np.mean(Z, axis=0)
+    Z = torch.cat(Z)
+    Z = torch.mean(Z, dim=0, keepdim=False)
     return Z
 
 
@@ -45,7 +43,7 @@ def rmse_mean(enc_x, enc_z, dec_x, dec_v):
 
 
 def smape(f, a):
-    return np.mean(2 * np.abs(a - f) / (np.abs(a) + np.abs(f)))
+    return torch.mean(2 * (torch.abs(a - f) / (torch.abs(a) + torch.abs(f))))
 
 
 # def plot(results):
@@ -63,11 +61,6 @@ def write_submission(filename, z):
 
 
 if __name__ == '__main__':
-
-    # smape(
-    #     np.array([[[110]]]),
-    #     np.array([[[100]]])
-    # )
 
     np.random.seed(101)
     torch.manual_seed(101)
@@ -124,7 +117,6 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=settings.LEARNING_RATE)
 
     results = []
-    # rmse_valid_low = rmse_mean(enc_x, enc_z, dec_x, dec_v)
     for epoch in range(settings.EPOCHS):
         for i, (x, z, v) in enumerate(loader):
             x = Variable(x)
@@ -140,7 +132,7 @@ if __name__ == '__main__':
 
             loss = model.loss(z, m, a)
             z = pred(enc_x, enc_z, dec_x, dec_v)
-            metric = smape(z, dec_z.numpy())
+            metric = smape(z, dec_z)
             print('smape', metric)
             test_dec_z = pred(
                 test_enc_x,
@@ -149,18 +141,12 @@ if __name__ == '__main__':
                 dec_v
             )
 
+            test_dec_z = test_dec_z.cpu().detach().numpy()
             write_submission('submissions/submission-{:2f}.csv'.format(metric), test_dec_z)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-            # rmse_valid = rmse_mean(enc_x, enc_z, dec_x, dec_v)
-            # if rmse_valid < rmse_valid_low:
-            #     rmse_valid_low = rmse_valid
-            #     save_model('models/{}-{}-{:.2f}'.format(epoch, i, rmse_valid), model)
-            #     print('lowest rmse valid', rmse_valid)
-            # print('rmse valid', rmse_valid)
 
             print('epoch {} batch {}/{} loss: {}'.format(epoch, i, len(loader), loss))
 
