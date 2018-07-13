@@ -131,18 +131,19 @@ if __name__ == '__main__':
             m, a = model(x, v)
 
             loss = model.loss(z, m, a)
-            z = pred(enc_x, enc_z, dec_x, dec_v)
-            metric = smape(z, dec_z)
-            print('smape', metric)
-            test_dec_z = pred(
-                test_enc_x,
-                test_enc_z,
-                test_dec_x,
-                dec_v
-            )
 
-            test_dec_z = test_dec_z.cpu().detach().numpy()
-            write_submission('submissions/submission-{:2f}.csv'.format(metric), test_dec_z)
+            if i % 10 == 0:
+                z = pred(enc_x, enc_z, dec_x, dec_v)
+                metric = smape(z, dec_z)
+                print('smape', metric)
+                test_dec_z = pred(
+                    test_enc_x,
+                    test_enc_z,
+                    test_dec_x,
+                    dec_v
+                )
+                test_dec_z = test_dec_z.cpu().detach().numpy()
+                write_submission('submissions/submission-{:2f}.csv'.format(metric), test_dec_z)
 
             optimizer.zero_grad()
             loss.backward()
