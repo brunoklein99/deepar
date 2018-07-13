@@ -94,7 +94,7 @@ def get_x_z(meta, v, datetime_offset: datetime.datetime, t_offset: int, length: 
             X.append(x)
             Z.append(z)
             V.append([v[i]])
-            if t % 10 == 0:
+            if t % 500 == 0:
                 print('i {}/{} t {}/{}'.format(i, N, t, t_end))
 
     X = np.array(X)
