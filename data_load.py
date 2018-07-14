@@ -106,6 +106,27 @@ def get_x_z(meta, t_offset: int, length: int, window_length: int):
     return X, Z, V
 
 
+def get_i_t(meta, t_offset: int, length: int, window_length: int):
+    s = meta['s']
+    v = meta['v']
+    assert len(s) == len(v)
+    I = []
+    T = []
+    V = []
+    N, _ = s.shape
+
+    t_end = t_offset + length - window_length + 1
+    for i in range(N):
+        for t in range(t_offset, t_end):
+            I.append(i)
+            T.append(t)
+            V.append([v[i]])
+
+    V = np.array(V)
+
+    return I, T, V
+
+
 def get_x_z_subsample(meta, t_offset: int, length: int, window_length: int, count: int):
     s = meta['s']
     v = meta['v']
@@ -213,16 +234,20 @@ def load_kaggle():
     win_len = enc_len + dec_len
     meta['win_len'] = win_len
 
-    x_train, z_train, v_train = get_x_z_subsample(
+    i, t, v_train = get_i_t(
         meta,
         t_offset=t1,
         length=train_len,
-        window_length=win_len,
-        count=100
+        window_length=win_len
     )
 
     p = np.squeeze(v_train / np.sum(v_train))
     v_train = np.expand_dims(v_train, axis=-1)
+
+    meta['i'] = i
+    meta['t'] = t
+    meta['v'] = v_train
+    meta['p'] = p
 
     enc_x, enc_z, _ = get_x_z(
         meta,
@@ -263,10 +288,6 @@ def load_kaggle():
 
     data = {
         'meta': meta,
-        'x': x_train,
-        'z': z_train,
-        'v': v_train,
-        'p': p,
         'enc_x': enc_x,
         'enc_z': enc_z,
         'dec_x': dec_x[:, :, 1:],
