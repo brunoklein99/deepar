@@ -33,7 +33,7 @@ def get_x_z_at_i_t(meta, v, datetime_offset: datetime.datetime, i: int, t: int, 
     x = []
     _, T = s.shape
     x.append(s[i, t - 1] / v[i])
-    # x.append(t / T)
+    x.append(t / (T + 89))
     d = datetime_offset
     if gran == 'm':
         d += relativedelta(months=t)
