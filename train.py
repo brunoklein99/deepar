@@ -28,7 +28,7 @@ def rmse(z_true, z_pred):
 
 def pred(enc_x, enc_z, dec_x, dec_v):
     Z = []
-    for i in range(5):
+    for i in range(25):
         z = model.forward_infer(enc_x, enc_z, dec_x, dec_v)
         z = z.unsqueeze(0)
         Z.append(z)
