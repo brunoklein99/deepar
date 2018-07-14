@@ -101,7 +101,8 @@ if __name__ == '__main__':
     loader = DataLoader(
         dataset=dataset,
         batch_size=settings.BATCH_SIZE,
-        shuffle=True
+        shuffle=True,
+        num_workers=4
     )
 
     _, _, x_dim = enc_x.shape
