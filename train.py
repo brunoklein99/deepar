@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 import settings
-from DefaultDataset import DefaultDataset
+from LazyDataset import LazyDataset
 from data_load import load_kaggle
 from model import GaussianNet, NegBinNet
 
@@ -68,10 +68,7 @@ if __name__ == '__main__':
 
     _, data = load_kaggle()
 
-    x = data['x']
-    z = data['z']
-    v = data['v']
-    p = data['p']
+    meta = data['meta']
     enc_x = data['enc_x']
     enc_z = data['enc_z']
     dec_x = data['dec_x']
@@ -81,7 +78,7 @@ if __name__ == '__main__':
     test_enc_z = data['test_enc_z']
     test_dec_x = data['test_dec_x']
 
-    dataset = DefaultDataset(x, z, v, p)
+    dataset = LazyDataset(meta)
 
     enc_x = torch.from_numpy(enc_x).float()
     enc_z = torch.from_numpy(enc_z).float()
@@ -107,7 +104,7 @@ if __name__ == '__main__':
         shuffle=True
     )
 
-    _, _, x_dim = x.shape
+    _, _, x_dim = enc_x.shape
     model = NegBinNet(x_dim)
     if settings.USE_CUDA:
         model = model.cuda()

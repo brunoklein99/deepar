@@ -231,22 +231,20 @@ def load_kaggle():
 
     meta['v'] = v
 
-    win_len = enc_len + dec_len
-    meta['win_len'] = win_len
+    wlen = enc_len + dec_len
+    meta['wlen'] = wlen
 
     i, t, v_train = get_i_t(
         meta,
         t_offset=t1,
         length=train_len,
-        window_length=win_len
+        window_length=wlen
     )
 
     p = np.squeeze(v_train / np.sum(v_train))
-    v_train = np.expand_dims(v_train, axis=-1)
 
     meta['i'] = i
     meta['t'] = t
-    meta['v'] = v_train
     meta['p'] = p
 
     enc_x, enc_z, _ = get_x_z(
@@ -285,6 +283,8 @@ def load_kaggle():
 
     v = np.expand_dims(v, axis=-1)
     v = np.expand_dims(v, axis=-1)
+
+    meta['v'] = v
 
     data = {
         'meta': meta,
