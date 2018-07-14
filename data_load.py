@@ -53,6 +53,9 @@ def get_x_z_at_i_t(meta, v, datetime_offset: datetime.datetime, i: int, t: int, 
         weekday = d.weekday()
         x.append(sin(2 * pi * (weekday / 6)))
         x.append(cos(2 * pi * (weekday / 6)))
+        x.append((d.year - 2013) / 5)
+        x.append(sin(2 * pi * ((d.month - 1) / 11)))
+        x.append(cos(2 * pi * ((d.month - 1) / 11)))
         for idx in range(10):
             if idx == meta['shops'][i]:
                 x.append(1.0)
@@ -213,7 +216,7 @@ def load_kaggle():
         length=train_len,
         window_length=enc_len + dec_len,
         gran=gran,
-        count=250_000
+        count=200_000
     )
 
     p = np.squeeze(v_train / np.sum(v_train))
