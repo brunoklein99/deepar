@@ -216,7 +216,7 @@ def load_kaggle():
         length=train_len,
         window_length=enc_len + dec_len,
         gran=gran,
-        count=200_000
+        count=100_000
     )
 
     p = np.squeeze(v_train / np.sum(v_train))
