@@ -46,24 +46,22 @@ class Net(nn.Module):
         return m, a
 
     def forward_infer(self, enc_x, enc_z, dec_x, v):
+        N, t_enc, _ = enc_x.shape
+        _, t_dec, _ = dec_x.shape
+        Z = torch.zeros(N, t_enc + t_dec, 1)
+        Z = Z.cuda()
+        Z[:, :t_enc, :] = enc_z
         _, (h, c) = self.cell(enc_x)
-        _, T, _ = dec_x.shape
-        z = enc_z[:, -1, 0]
-        z = z.unsqueeze(-1)
-        z = z.unsqueeze(-1)
-        z = z / v
-        Z = []
-        for t in range(T):
-            x = dec_x[:, t, :]
-            x = x.unsqueeze(1)
+        for t in range(t_enc, t_enc + t_dec):
+            x = dec_x[:, t - t_enc:t - t_enc + 1, :]
+            z = Z[:, t - 1:t, :]
+            z = z / v
             x = torch.cat((z, x), 2)
             o, (h, c) = self.cell(x, (h, c))
             m, a = self.forward_ma(o, v)
-            z = self.sample(m, a)
-            Z.append(z)
-            z = z / v
-        Z = torch.cat(Z, 1)
-        return Z
+            z_pred = self.sample(m, a)
+            Z[:, t:t+1, :] = z_pred
+        return Z[:, t_enc:, :]
 
 
 class NegBinNet(Net):
