@@ -33,6 +33,8 @@ def rmse(z_true, z_pred):
 def pred(model, enc_x, enc_z, dec_x, dec_v):
     N, T, _ = dec_x.shape
     Z = torch.zeros(N, T, 1)
+    if settings.USE_CUDA:
+        Z = Z.cuda()
     nbatches = int(ceil(N / settings.BATCH_SIZE))
     nsamples = 25
     for idx_batch in range(nbatches):
@@ -196,6 +198,8 @@ if __name__ == '__main__':
 
     N, T, _ = test_dec_x.shape
     test_dec_z = torch.zeros(N, T, 1)
+    if settings.USE_CUDA:
+        test_dec_z = test_dec_z.cuda()
     folders = [x for x in listdir('checkpoints') if isdir(join('checkpoints', x))]
     for fold_dir in folders:
         fold_files = listdir('checkpoints/{}'.format(fold_dir))
