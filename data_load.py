@@ -1,5 +1,4 @@
 import datetime
-from os.path import isfile
 from random import randint
 
 import pandas as pd
@@ -250,27 +249,16 @@ def load_kaggle():
 
     gran = 'd'
 
-    x_train_filename = '../x_train.npy'
-    z_train_filename = '../z_train.npy'
-    v_train_filename = '../v_train.npy'
-    if isfile(x_train_filename) and isfile(z_train_filename) and isfile(v_train_filename):
-        x_train = np.load(x_train_filename)
-        z_train = np.load(z_train_filename)
-        v_train = np.load(v_train_filename)
-    else:
-        x_train, z_train, v_train = get_x_z_subsample(
-            meta,
-            v,
-            datetime_offset,
-            t_offset=t1,
-            length=train_len,
-            window_length=enc_len + dec_len,
-            gran=gran,
-            count=100_000
-        )
-        np.save(x_train_filename, x_train)
-        np.save(z_train_filename, z_train)
-        np.save(v_train_filename, v_train)
+    x_train, z_train, v_train = get_x_z_subsample(
+        meta,
+        v,
+        datetime_offset,
+        t_offset=t1,
+        length=train_len,
+        window_length=enc_len + dec_len,
+        gran=gran,
+        count=100_000
+    )
 
     v_train = np.expand_dims(v_train, axis=-1)
 
