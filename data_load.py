@@ -257,10 +257,9 @@ def load_kaggle():
         length=train_len,
         window_length=enc_len + dec_len,
         gran=gran,
-        count=100_000
+        count=1000
     )
 
-    p = np.squeeze(v_train / np.sum(v_train))
     v_train = np.expand_dims(v_train, axis=-1)
 
     # enc_x, enc_z, _ = get_x_z(
@@ -283,6 +282,7 @@ def load_kaggle():
     #     gran=gran
     # )
 
+    print('loading test_enc_x & test_enc_z')
     test_enc_x, test_enc_z, _ = get_x_z(
         meta,
         v,
@@ -302,6 +302,7 @@ def load_kaggle():
         'shops': meta['shops']
     }
 
+    print('loading test_dec_x')
     test_dec_x, _, _ = get_x_z(
         meta,
         v,
@@ -315,11 +316,16 @@ def load_kaggle():
     v = np.expand_dims(v, axis=-1)
     v = np.expand_dims(v, axis=-1)
 
+    nregfeat = 13
+
     data = {
+        'nregfeat': nregfeat,
+        'enc_len': enc_len,
+        'dec_len': dec_len,
         'x': x_train,
         'z': z_train,
         'v': v_train,
-        'p': p,
+        # 'p': p,
         # 'enc_x': enc_x,
         # 'enc_z': enc_z,
         # 'dec_x': dec_x[:, :, 13:],
@@ -327,7 +333,7 @@ def load_kaggle():
         'dec_v': v,
         'test_enc_x': test_enc_x,
         'test_enc_z': test_enc_z,
-        'test_dec_x': test_dec_x[:, :, 13:]
+        'test_dec_x': test_dec_x[:, :, nregfeat:]
     }
 
     return datetime_offset, data

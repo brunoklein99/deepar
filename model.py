@@ -49,7 +49,8 @@ class Net(nn.Module):
         N, t_enc, _ = enc_x.shape
         _, t_dec, _ = dec_x.shape
         Z = torch.zeros(N, t_enc + t_dec, 1)
-        Z = Z.cuda()
+        if settings.USE_CUDA:
+            Z = Z.cuda()
         Z[:, :t_enc, :] = enc_z
         _, (h, c) = self.cell(enc_x)
         for t in range(t_enc, t_enc + t_dec):
