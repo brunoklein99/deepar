@@ -32,6 +32,43 @@ def get_x_z_at_i_t(meta, v, datetime_offset: datetime.datetime, i: int, t: int, 
     s = meta['series']
     x = []
     _, T = s.shape
+
+    t_lag = t - 7
+    if t_lag >= 0:
+        x.append(np.min(s[i, t_lag:t]) / v[i])
+        x.append(np.max(s[i, t_lag:t]) / v[i])
+        x.append(np.median(s[i, t_lag:t]) / v[i])
+        x.append(np.mean(s[i, t_lag:t]) / v[i])
+    else:
+        x.append(0.0)
+        x.append(0.0)
+        x.append(0.0)
+        x.append(0.0)
+
+    t_lag = t - 30
+    if t_lag >= 0:
+        x.append(np.min(s[i, t_lag:t]) / v[i])
+        x.append(np.max(s[i, t_lag:t]) / v[i])
+        x.append(np.median(s[i, t_lag:t]) / v[i])
+        x.append(np.mean(s[i, t_lag:t]) / v[i])
+    else:
+        x.append(0.0)
+        x.append(0.0)
+        x.append(0.0)
+        x.append(0.0)
+
+    t_lag = t - 60
+    if t_lag >= 0:
+        x.append(np.min(s[i, t_lag:t]) / v[i])
+        x.append(np.max(s[i, t_lag:t]) / v[i])
+        x.append(np.median(s[i, t_lag:t]) / v[i])
+        x.append(np.mean(s[i, t_lag:t]) / v[i])
+    else:
+        x.append(0.0)
+        x.append(0.0)
+        x.append(0.0)
+        x.append(0.0)
+
     x.append(s[i, t - 1] / v[i])
     x.append(t / (T + 89))
     d = datetime_offset
@@ -107,7 +144,8 @@ def get_x_z(meta, v, datetime_offset: datetime.datetime, t_offset: int, length: 
     return X, Z, V
 
 
-def get_x_z_subsample(meta, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int, count: int, gran='m'):
+def get_x_z_subsample(meta, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int,
+                      count: int, gran='m'):
     s = meta['series']
     assert len(s) == len(v)
     X = []
@@ -281,12 +319,12 @@ def load_kaggle():
         'p': p,
         'enc_x': enc_x,
         'enc_z': enc_z,
-        'dec_x': dec_x[:, :, 1:],
+        'dec_x': dec_x[:, :, 13:],
         'dec_z': dec_z,
         'dec_v': v,
         'test_enc_x': test_enc_x,
         'test_enc_z': test_enc_z,
-        'test_dec_x': test_dec_x[:, :, 1:]
+        'test_dec_x': test_dec_x[:, :, 13:]
     }
 
     return datetime_offset, data

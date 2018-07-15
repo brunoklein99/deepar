@@ -54,9 +54,56 @@ class Net(nn.Module):
         _, (h, c) = self.cell(enc_x)
         for t in range(t_enc, t_enc + t_dec):
             x = dec_x[:, t - t_enc:t - t_enc + 1, :]
+
             z = Z[:, t - 1:t, :]
             z = z / v
             x = torch.cat((z, x), 2)
+
+            t_lag = t - 60
+            z_lag = Z[:, t_lag:t, :]
+            z = torch.mean(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+            z, _ = torch.median(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+            z, _ = torch.max(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+            z, _ = torch.min(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+
+            t_lag = t - 30
+            z_lag = Z[:, t_lag:t, :]
+            z = torch.mean(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+            z, _ = torch.median(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+            z, _ = torch.max(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+            z, _ = torch.min(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+
+            t_lag = t - 7
+            z_lag = Z[:, t_lag:t, :]
+            z = torch.mean(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+            z, _ = torch.median(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+            z, _ = torch.max(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+            z, _ = torch.min(z_lag, dim=1, keepdim=True)
+            z = z / v
+            x = torch.cat((z, x), 2)
+
             o, (h, c) = self.cell(x, (h, c))
             m, a = self.forward_ma(o, v)
             z_pred = self.sample(m, a)
