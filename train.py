@@ -183,14 +183,14 @@ if __name__ == '__main__':
                 loss.backward()
                 optimizer.step()
 
-                if i % 10 == 0:
+                if i % 100 == 0:
                     print('fold {} epoch {} batch {}/{} loss: {}'.format(nfold, epoch, i, len(loader), loss))
-                    z = pred(model, enc_x, enc_z, dec_x, v_valid)
-                    metric = smape(z, dec_z)
-                    print('smape', metric)
-                    dirname = 'checkpoints/{}'.format(nfold)
-                    makedirs(dirname, exist_ok=True)
-                    save_model('{}/checkpoint-{:2f}'.format(dirname, metric), model)
+            z = pred(model, enc_x, enc_z, dec_x, v_valid)
+            metric = smape(z, dec_z)
+            print('smape', metric)
+            dirname = 'checkpoints/{}'.format(nfold)
+            makedirs(dirname, exist_ok=True)
+            save_model('{}/checkpoint-{:2f}'.format(dirname, metric), model)
 
         del model
         del x_valid
