@@ -72,31 +72,31 @@ if __name__ == '__main__':
     z = data['z']
     v = data['v']
     p = data['p']
-    enc_x = data['enc_x']
-    enc_z = data['enc_z']
-    dec_x = data['dec_x']
-    dec_z = data['dec_z']
-    dec_v = data['dec_v']
+    # enc_x = data['enc_x']
+    # enc_z = data['enc_z']
+    # dec_x = data['dec_x']
+    # dec_z = data['dec_z']
+    # dec_v = data['dec_v']
     test_enc_x = data['test_enc_x']
     test_enc_z = data['test_enc_z']
     test_dec_x = data['test_dec_x']
 
     dataset = DefaultDataset(x, z, v, p)
 
-    enc_x = torch.from_numpy(enc_x).float()
-    enc_z = torch.from_numpy(enc_z).float()
-    dec_x = torch.from_numpy(dec_x).float()
-    dec_z = torch.from_numpy(dec_z).float()
-    dec_v = torch.from_numpy(dec_v).float()
+    # enc_x = torch.from_numpy(enc_x).float()
+    # enc_z = torch.from_numpy(enc_z).float()
+    # dec_x = torch.from_numpy(dec_x).float()
+    # dec_z = torch.from_numpy(dec_z).float()
+    # dec_v = torch.from_numpy(dec_v).float()
     test_enc_x = torch.from_numpy(test_enc_x).float()
     test_enc_z = torch.from_numpy(test_enc_z).float()
     test_dec_x = torch.from_numpy(test_dec_x).float()
     if settings.USE_CUDA:
-        enc_x = enc_x.cuda()
-        enc_z = enc_z.cuda()
-        dec_x = dec_x.cuda()
-        dec_z = dec_z.cuda()
-        dec_v = dec_v.cuda()
+        # enc_x = enc_x.cuda()
+        # enc_z = enc_z.cuda()
+        # dec_x = dec_x.cuda()
+        # dec_z = dec_z.cuda()
+        # dec_v = dec_v.cuda()
         test_enc_x = test_enc_x.cuda()
         test_enc_z = test_enc_z.cuda()
         test_dec_x = test_dec_x.cuda()
@@ -136,22 +136,16 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-            if i % 10 == 0:
-                print('epoch {} batch {}/{} loss: {}'.format(epoch, i, len(loader), loss))
-                z = pred(enc_x, enc_z, dec_x, dec_v)
-                metric = smape(z, dec_z)
-                print('smape', metric)
-                test_dec_z = pred(
-                    test_enc_x,
-                    test_enc_z,
-                    test_dec_x,
-                    dec_v
-                )
-                test_dec_z = test_dec_z.cpu().detach().numpy()
-                write_submission('submissions/submission-{:2f}.csv'.format(metric), test_dec_z)
-
-    save_model('models/1', model)
-
-    # plot(results)
-
-    print('rmse final', rmse_mean(enc_x, enc_z, dec_x, dec_v))
+            # if i % 10 == 0:
+            #     print('epoch {} batch {}/{} loss: {}'.format(epoch, i, len(loader), loss))
+            #     z = pred(enc_x, enc_z, dec_x, dec_v)
+            #     metric = smape(z, dec_z)
+            #     print('smape', metric)
+            #     test_dec_z = pred(
+            #         test_enc_x,
+            #         test_enc_z,
+            #         test_dec_x,
+            #         dec_v
+            #     )
+            #     test_dec_z = test_dec_z.cpu().detach().numpy()
+            #     write_submission('submissions/submission-{:2f}.csv'.format(metric), test_dec_z)
