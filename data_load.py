@@ -1,5 +1,6 @@
 import datetime
 from random import randint
+from threading import Thread, currentThread
 
 import pandas as pd
 import numpy as np
@@ -29,11 +30,10 @@ def get_keep_indexes(x):
 
 
 def get_x_z_at_i_t(meta, i: int, t: int, out_i: int, out_t: int, out_x, out_z=None, use_lag_feat=True):
-    
     def set_get_index(idx, vector, value):
         vector[out_i, out_t, idx] = value
         return idx + 1
-    
+
     s = meta['s']
     v = meta['v']
     assert len(s) == len(v)
@@ -124,7 +124,8 @@ def get_x_z_at_i_t(meta, i: int, t: int, out_i: int, out_t: int, out_x, out_z=No
         out_z[out_i, out_t, 0] = s[i, t]
 
 
-def get_window_x_z_at_i_t(meta, i: int, t_window: int, window_len: int, out_i: int, out_x, out_z=None, use_lag_feat=True):
+def get_window_x_z_at_i_t(meta, i: int, t_window: int, window_len: int, out_i: int, out_x, out_z=None,
+                          use_lag_feat=True):
     for t in range(t_window, t_window + window_len):
         get_x_z_at_i_t(meta, i, t, out_i, t - t_window, out_x, out_z, use_lag_feat)
 
@@ -146,6 +147,24 @@ def get_x_z(meta, t_offset: int, length: int, window_length: int, out_x, out_z=N
                 print('i {}/{} t {}/{}'.format(i, N, t, t_end))
 
 
+def chunks(l, n):
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+
+def worker(indexes, meta, window_length, out_x, out_z):
+    tid = currentThread().ident
+    print('started {}'.format(tid))
+    try:
+        for index, (i, t, c) in enumerate(indexes):
+            get_window_x_z_at_i_t(meta, i, t, window_length, c, out_x, out_z)
+            if index % 1000 == 0:
+                print('thread {} checkpoint {}'.format(tid, index))
+    except Exception as e:
+        print('thread {} exception {}'.format(tid, e))
+    print('finished {}'.format(tid))
+
+
 def get_x_z_subsample(meta, t_offset: int, length: int, window_length: int, out_x, out_z=None, out_v=None):
     s = meta['s']
     v = meta['v']
@@ -160,14 +179,21 @@ def get_x_z_subsample(meta, t_offset: int, length: int, window_length: int, out_
     T = np.array(range(t_offset, t_offset + length - window_length + 1))
     p = np.array([x * 3 / len(T) for x in range(len(T))])
     p = p / np.sum(p)
+    indexes = []
     for c in range(count_x):
         i = randint(0, len(s) - 1)
         t = np.random.choice(T, p=p)
-        get_window_x_z_at_i_t(meta, i, t, window_length, c, out_x, out_z)
+        indexes.append((i, t, c))
         if out_v is not None:
             out_v[c] = v[i]
-        if c % 1000 == 0:
-            print('sampling {}/{}'.format(c, count_x))
+    indexes = list(chunks(indexes, count_x // 12))
+    threads = []
+    for indexes_tuple in indexes:
+        thread = Thread(target=worker, args=(indexes_tuple, meta, window_length, out_x, out_z))
+        thread.start()
+        threads.append(thread)
+    for thread in threads:
+        thread.join()
 
 
 def get_parts_series():
@@ -244,7 +270,7 @@ def load_kaggle():
     v = 1 + np.mean(s[:, t1:t0], axis=1)
     meta['v'] = v
 
-    n_samples = 100
+    n_samples = 100_000
     n_feature = 81
     x_train = np.zeros(shape=(n_samples, enc_len + dec_len, n_feature))
     z_train = np.zeros(shape=(n_samples, enc_len + dec_len, 1))
