@@ -86,7 +86,6 @@ if __name__ == '__main__':
 
     enc_len = data['enc_len']
     dec_len = data['dec_len']
-    nregfeat = data['nregfeat']
     x_train_valid = data['x']
     z_train_valid = data['z']
     v_train_valid = data['v']
@@ -142,7 +141,7 @@ if __name__ == '__main__':
 
         enc_x = x_valid[:, :enc_len, :]
         enc_z = z_valid[:, :enc_len, :]
-        dec_x = x_valid[:, enc_len:, nregfeat:]
+        dec_x = x_valid[:, enc_len:, :]
         dec_z = z_valid[:, enc_len:, :]
 
         model = NegBinNet(x_dim)

@@ -28,152 +28,146 @@ def get_keep_indexes(x):
     return indexes
 
 
-def get_x_z_at_i_t(meta, i: int, t: int):
+def get_x_z_at_i_t(meta, i: int, t: int, out_i: int, out_t: int, out_x, out_z=None, use_lag_feat=True):
+    
+    def set_get_index(idx, vector, value):
+        vector[out_i, out_t, idx] = value
+        return idx + 1
+    
     s = meta['s']
     v = meta['v']
-    x = []
+    assert len(s) == len(v)
     _, T = s.shape
+    index_x = 0
 
-    t_lag = t - 7
-    if t_lag >= 0:
-        x.append(np.min(s[i, t_lag:t]) / v[i])
-        x.append(np.max(s[i, t_lag:t]) / v[i])
-        x.append(np.median(s[i, t_lag:t]) / v[i])
-        x.append(np.mean(s[i, t_lag:t]) / v[i])
-    else:
-        x.append(0.0)
-        x.append(0.0)
-        x.append(0.0)
-        x.append(0.0)
+    if use_lag_feat:
+        t_lag = t - 7
+        if t_lag >= 0:
+            index_x = set_get_index(index_x, out_x, np.min(s[i, t_lag:t]) / v[i])
+            index_x = set_get_index(index_x, out_x, np.max(s[i, t_lag:t]) / v[i])
+            index_x = set_get_index(index_x, out_x, np.median(s[i, t_lag:t]) / v[i])
+            index_x = set_get_index(index_x, out_x, np.mean(s[i, t_lag:t]) / v[i])
+        else:
+            index_x = set_get_index(index_x, out_x, 0.0)
+            index_x = set_get_index(index_x, out_x, 0.0)
+            index_x = set_get_index(index_x, out_x, 0.0)
+            index_x = set_get_index(index_x, out_x, 0.0)
 
-    t_lag = t - 30
-    if t_lag >= 0:
-        x.append(np.min(s[i, t_lag:t]) / v[i])
-        x.append(np.max(s[i, t_lag:t]) / v[i])
-        x.append(np.median(s[i, t_lag:t]) / v[i])
-        x.append(np.mean(s[i, t_lag:t]) / v[i])
-    else:
-        x.append(0.0)
-        x.append(0.0)
-        x.append(0.0)
-        x.append(0.0)
+        t_lag = t - 30
+        if t_lag >= 0:
+            index_x = set_get_index(index_x, out_x, np.min(s[i, t_lag:t]) / v[i])
+            index_x = set_get_index(index_x, out_x, np.max(s[i, t_lag:t]) / v[i])
+            index_x = set_get_index(index_x, out_x, np.median(s[i, t_lag:t]) / v[i])
+            index_x = set_get_index(index_x, out_x, np.mean(s[i, t_lag:t]) / v[i])
+        else:
+            index_x = set_get_index(index_x, out_x, 0.0)
+            index_x = set_get_index(index_x, out_x, 0.0)
+            index_x = set_get_index(index_x, out_x, 0.0)
+            index_x = set_get_index(index_x, out_x, 0.0)
 
-    t_lag = t - 60
-    if t_lag >= 0:
-        x.append(np.min(s[i, t_lag:t]) / v[i])
-        x.append(np.max(s[i, t_lag:t]) / v[i])
-        x.append(np.median(s[i, t_lag:t]) / v[i])
-        x.append(np.mean(s[i, t_lag:t]) / v[i])
-    else:
-        x.append(0.0)
-        x.append(0.0)
-        x.append(0.0)
-        x.append(0.0)
+        t_lag = t - 60
+        if t_lag >= 0:
+            index_x = set_get_index(index_x, out_x, np.min(s[i, t_lag:t]) / v[i])
+            index_x = set_get_index(index_x, out_x, np.max(s[i, t_lag:t]) / v[i])
+            index_x = set_get_index(index_x, out_x, np.median(s[i, t_lag:t]) / v[i])
+            index_x = set_get_index(index_x, out_x, np.mean(s[i, t_lag:t]) / v[i])
+        else:
+            index_x = set_get_index(index_x, out_x, 0.0)
+            index_x = set_get_index(index_x, out_x, 0.0)
+            index_x = set_get_index(index_x, out_x, 0.0)
+            index_x = set_get_index(index_x, out_x, 0.0)
 
-    x.append(s[i, t - 1] / v[i])
-    x.append(t / (T + 89))
+        index_x = set_get_index(index_x, out_x, s[i, t - 1] / v[i])
+    index_x = set_get_index(index_x, out_x, t / (T + 89))
+
     d = meta['datetime_offset']
     g = meta['g']
     if g == 'm':
         d += relativedelta(months=t)
-        x.append(sin(2 * pi * ((d.month - 1) / 11)))
-        x.append(cos(2 * pi * ((d.month - 1) / 11)))
+        index_x = set_get_index(index_x, out_x, sin(2 * pi * ((d.month - 1) / 11)))
+        index_x = set_get_index(index_x, out_x, cos(2 * pi * ((d.month - 1) / 11)))
     elif g == 'h':
         d += relativedelta(hours=t)
-        x.append(sin(2 * pi * (d.hour / 23)))
-        x.append(cos(2 * pi * (d.hour / 23)))
+        index_x = set_get_index(index_x, out_x, sin(2 * pi * (d.hour / 23)))
+        index_x = set_get_index(index_x, out_x, cos(2 * pi * (d.hour / 23)))
         weekday = d.weekday()
-        x.append(sin(2 * pi * (weekday / 6)))
-        x.append(cos(2 * pi * (weekday / 6)))
+        index_x = set_get_index(index_x, out_x, sin(2 * pi * (weekday / 6)))
+        index_x = set_get_index(index_x, out_x, cos(2 * pi * (weekday / 6)))
     elif g == 'd':
         d += relativedelta(days=t)
-        x.append(sin(2 * pi * ((d.day - 1) / 30)))
-        x.append(cos(2 * pi * ((d.day - 1) / 30)))
+        index_x = set_get_index(index_x, out_x, sin(2 * pi * ((d.day - 1) / 30)))
+        index_x = set_get_index(index_x, out_x, cos(2 * pi * ((d.day - 1) / 30)))
         weekday = d.weekday()
-        x.append(sin(2 * pi * (weekday / 6)))
-        x.append(cos(2 * pi * (weekday / 6)))
-        x.append((d.year - 2013) / 5)
-        x.append(sin(2 * pi * ((d.month - 1) / 11)))
-        x.append(cos(2 * pi * ((d.month - 1) / 11)))
+
+        index_x = set_get_index(index_x, out_x, sin(2 * pi * (weekday / 6)))
+        index_x = set_get_index(index_x, out_x, cos(2 * pi * (weekday / 6)))
+
+        index_x = set_get_index(index_x, out_x, (d.year - 2013) / 5)
+        index_x = set_get_index(index_x, out_x, sin(2 * pi * ((d.month - 1) / 11)))
+        index_x = set_get_index(index_x, out_x, cos(2 * pi * ((d.month - 1) / 11)))
+
         for idx in range(10):
             if idx == meta['shops'][i]:
-                x.append(1.0)
+                index_x = set_get_index(index_x, out_x, 1.0)
             else:
-                x.append(0.0)
+                index_x = set_get_index(index_x, out_x, 0.0)
         for idx in range(50):
             if idx == meta['items'][i]:
-                x.append(1.0)
+                index_x = set_get_index(index_x, out_x, 1.0)
             else:
-                x.append(0.0)
+                index_x = set_get_index(index_x, out_x, 0.0)
     else:
         raise Exception('gran not supported')
-    z = s[i, t]
-    return x, z
+    _, _, x_dim = out_x.shape
+    assert index_x == x_dim
+    if out_z is not None:
+        out_z[out_i, out_t, 0] = s[i, t]
 
 
-def get_window_x_z_at_i_t(meta, i: int, t_window: int, window_len: int):
-    X = []
-    Z = []
+def get_window_x_z_at_i_t(meta, i: int, t_window: int, window_len: int, out_i: int, out_x, out_z=None, use_lag_feat=True):
     for t in range(t_window, t_window + window_len):
-        x, z = get_x_z_at_i_t(meta, i, t)
-        X.append(x)
-        Z.append([z])
-    return X, Z
+        get_x_z_at_i_t(meta, i, t, out_i, t - t_window, out_x, out_z, use_lag_feat)
 
 
-def get_x_z(meta, t_offset: int, length: int, window_length: int):
+def get_x_z(meta, t_offset: int, length: int, window_length: int, out_x, out_z=None, out_v=None, use_lag_feat=True):
     s = meta['s']
     v = meta['v']
     assert len(s) == len(v)
-    X = []
-    Z = []
-    V = []
     N, _ = s.shape
-
     t_end = t_offset + length - window_length + 1
+    out_i = 0
     for i in range(N):
         for t in range(t_offset, t_end):
-            x, z = get_window_x_z_at_i_t(meta, i, t, window_length)
-            X.append(x)
-            Z.append(z)
-            V.append([v[i]])
+            get_window_x_z_at_i_t(meta, i, t, window_length, i, out_x, out_z, use_lag_feat)
+            if out_v is not None:
+                out_v[out_i] = v[i]
+            out_i += 1
             if t % 500 == 0:
                 print('i {}/{} t {}/{}'.format(i, N, t, t_end))
 
-    X = np.array(X)
-    Z = np.array(Z)
-    V = np.array(V)
 
-    return X, Z, V
-
-
-def get_x_z_subsample(meta, t_offset: int, length: int, window_length: int, count: int):
+def get_x_z_subsample(meta, t_offset: int, length: int, window_length: int, out_x, out_z=None, out_v=None):
     s = meta['s']
     v = meta['v']
     assert len(s) == len(v)
-    X = []
-    Z = []
-    V = []
     N, _ = s.shape
+    count_x, _, _ = out_x.shape
+    count_z, _, _ = out_z.shape
+    count_v, = out_v.shape
+    assert count_x == count_z
+    assert count_x == count_v
 
     T = np.array(range(t_offset, t_offset + length - window_length + 1))
     p = np.array([x * 3 / len(T) for x in range(len(T))])
     p = p / np.sum(p)
-    for c in range(count):
+    for c in range(count_x):
         i = randint(0, len(s) - 1)
         t = np.random.choice(T, p=p)
-        x, z = get_window_x_z_at_i_t(meta, i, t, window_length)
-        X.append(x)
-        Z.append(z)
-        V.append([v[i]])
+        get_window_x_z_at_i_t(meta, i, t, window_length, c, out_x, out_z)
+        if out_v is not None:
+            out_v[c] = v[i]
         if c % 1000 == 0:
-            print('sampling {}/{}'.format(c, count))
-
-    X = np.array(X)
-    Z = np.array(Z)
-    V = np.array(V)
-
-    return X, Z, V
+            print('sampling {}/{}'.format(c, count_x))
 
 
 def get_parts_series():
@@ -250,12 +244,19 @@ def load_kaggle():
     v = 1 + np.mean(s[:, t1:t0], axis=1)
     meta['v'] = v
 
-    x_train, z_train, v_train = get_x_z_subsample(
+    n_samples = 100
+    n_feature = 81
+    x_train = np.zeros(shape=(n_samples, enc_len + dec_len, n_feature))
+    z_train = np.zeros(shape=(n_samples, enc_len + dec_len, 1))
+    v_train = np.zeros(shape=(n_samples,))
+    get_x_z_subsample(
         meta,
         t_offset=t1,
         length=train_len,
         window_length=enc_len + dec_len,
-        count=100_000
+        out_x=x_train,
+        out_z=z_train,
+        out_v=v_train
     )
 
     v_train = np.expand_dims(v_train, axis=-1)
@@ -281,39 +282,33 @@ def load_kaggle():
     # )
 
     print('loading test_enc_x & test_enc_z')
-    test_enc_x, test_enc_z, _ = get_x_z(
+    n_samples, _ = s.shape
+    test_enc_x = np.zeros(shape=(n_samples, enc_len, n_feature))
+    test_enc_z = np.zeros(shape=(n_samples, enc_len, 1))
+    get_x_z(
         meta,
-        v,
         t_offset=T - enc_len,
         length=enc_len,
-        window_length=enc_len
+        window_length=enc_len,
+        out_x=test_enc_x,
+        out_z=test_enc_z
     )
-
-    # mock series, just to build input features of the prediction range
-    s = np.random.randn(N, T + dec_len)
-
-    meta = {
-        'series': s,
-        'items': meta['items'],
-        'shops': meta['shops']
-    }
 
     print('loading test_dec_x')
-    test_dec_x, _, _ = get_x_z(
+    test_dec_x = np.zeros(shape=(n_samples, dec_len, n_feature - 13))
+    get_x_z(
         meta,
-        v,
         t_offset=T,
         length=dec_len,
-        window_length=dec_len
+        window_length=dec_len,
+        out_x=test_dec_x,
+        use_lag_feat=False
     )
 
     v = np.expand_dims(v, axis=-1)
     v = np.expand_dims(v, axis=-1)
 
-    nregfeat = 13
-
     data = {
-        'nregfeat': nregfeat,
         'enc_len': enc_len,
         'dec_len': dec_len,
         'x': x_train,
@@ -327,10 +322,10 @@ def load_kaggle():
         'dec_v': v,
         'test_enc_x': test_enc_x,
         'test_enc_z': test_enc_z,
-        'test_dec_x': test_dec_x[:, :, nregfeat:]
+        'test_dec_x': test_dec_x
     }
 
-    return datetime_offset, data
+    return meta['datetime_offset'], data
 
 
 def load_elec():
