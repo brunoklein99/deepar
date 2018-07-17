@@ -145,8 +145,8 @@ def get_x_z(meta, t_offset: int, length: int, window_length: int, out_x, out_z=N
             if out_v is not None:
                 out_v[out_i] = v[i]
             out_i += 1
-            if t % 500 == 0:
-                print('i {}/{} t {}/{}'.format(i, N, t, t_end))
+            if out_i % 10 == 0:
+                print('out_i {}'.format(out_i))
 
 
 def chunks(l, n):
@@ -177,7 +177,7 @@ def get_x_z_subsample(meta, t_offset: int, length: int, window_length: int, shar
     N, _ = s.shape
     count_x, _, _ = out_x_shape
     count_z, _, _ = out_z_shape
-    count_v, = out_v.shape
+    count_v, _, _ = out_v.shape
     assert count_x == count_z
     assert count_x == count_v
 
@@ -190,7 +190,7 @@ def get_x_z_subsample(meta, t_offset: int, length: int, window_length: int, shar
         t = np.random.choice(T, p=p)
         indexes.append((i, t, c))
         if out_v is not None:
-            out_v[c] = v[i]
+            out_v[c, 0, 0] = v[i]
     indexes = list(chunks(indexes, count_x // 12))
     threads = []
     for indexes_tuple in indexes:
@@ -296,7 +296,7 @@ def load_kaggle():
     n_feature = 81
     x_train_shape = (n_samples, enc_len + dec_len, n_feature)
     z_train_shape = (n_samples, enc_len + dec_len, 1)
-    v_train_shape = (n_samples,)
+    v_train_shape = (n_samples, 1, 1)
     shared_x_train = Array(c.c_double, shape_size(x_train_shape), lock=False)
     shared_z_train = Array(c.c_double, shape_size(z_train_shape), lock=False)
     v_train = np.zeros(shape=v_train_shape)
@@ -313,7 +313,6 @@ def load_kaggle():
     )
     x_train = np.frombuffer(shared_x_train).reshape(x_train_shape)
     z_train = np.frombuffer(shared_z_train).reshape(z_train_shape)
-    v_train = np.expand_dims(v_train, axis=-1)
 
     # enc_x, enc_z, _ = get_x_z(
     #     meta,
