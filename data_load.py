@@ -162,8 +162,8 @@ def worker(indexes, meta, window_length, shared_out_x, out_x_shape, shared_out_z
         out_z = np.frombuffer(shared_out_z).reshape(out_z_shape)
         for index, (i, t, c) in enumerate(indexes):
             get_window_x_z_at_i_t(meta, i, t, window_length, c, out_x, out_z)
-            if index % 1000 == 0:
-                print('thread {} checkpoint {}'.format(tid, index))
+            if index % 500 == 0:
+                print('thread {} checkpoint {}{}'.format(tid, index, len(indexes) - 1))
     except Exception as e:
         print('thread {} exception {}'.format(tid, e))
     print('finished {}'.format(tid))
