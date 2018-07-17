@@ -1,6 +1,6 @@
 import datetime
 from random import randint
-from threading import Thread, currentThread
+import multiprocessing
 
 import pandas as pd
 import numpy as np
@@ -153,7 +153,7 @@ def chunks(l, n):
 
 
 def worker(indexes, meta, window_length, out_x, out_z):
-    tid = currentThread().ident
+    tid = multiprocessing.current_process().ident
     print('started {}'.format(tid))
     try:
         for index, (i, t, c) in enumerate(indexes):
@@ -189,7 +189,7 @@ def get_x_z_subsample(meta, t_offset: int, length: int, window_length: int, out_
     indexes = list(chunks(indexes, count_x // 12))
     threads = []
     for indexes_tuple in indexes:
-        thread = Thread(target=worker, args=(indexes_tuple, meta, window_length, out_x, out_z))
+        thread = multiprocessing.Process(target=worker, args=(indexes_tuple, meta, window_length, out_x, out_z))
         thread.start()
         threads.append(thread)
     for thread in threads:
