@@ -236,13 +236,16 @@ def load_kaggle():
 
     enc_len = 180
     dec_len = 90
+    train_len = T - 2
 
     # first t of the series
-    t1 = 365
-    train_len = T - 1 - t1
+    t1 = 1
 
     # first t of prediction range
     t0 = t1 + train_len
+
+    # first t of encoder (validation)
+    t_enc = t0 - enc_len
 
     v = 1 + np.mean(s[:, t1:t0], axis=1)
 
