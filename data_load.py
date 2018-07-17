@@ -1,4 +1,6 @@
 import datetime
+import ctypes as c
+from multiprocessing import Array
 from random import randint
 import multiprocessing
 
@@ -152,10 +154,12 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def worker(indexes, meta, window_length, out_x, out_z):
+def worker(indexes, meta, window_length, shared_out_x, out_x_shape, shared_out_z, out_z_shape):
     tid = multiprocessing.current_process().ident
     print('started {}'.format(tid))
     try:
+        out_x = np.frombuffer(shared_out_x).reshape(out_x_shape)
+        out_z = np.frombuffer(shared_out_z).reshape(out_z_shape)
         for index, (i, t, c) in enumerate(indexes):
             get_window_x_z_at_i_t(meta, i, t, window_length, c, out_x, out_z)
             if index % 1000 == 0:
@@ -165,13 +169,14 @@ def worker(indexes, meta, window_length, out_x, out_z):
     print('finished {}'.format(tid))
 
 
-def get_x_z_subsample(meta, t_offset: int, length: int, window_length: int, out_x, out_z=None, out_v=None):
+def get_x_z_subsample(meta, t_offset: int, length: int, window_length: int, shared_out_x, out_x_shape,
+                      shared_out_z=None, out_z_shape=None, out_v=None):
     s = meta['s']
     v = meta['v']
     assert len(s) == len(v)
     N, _ = s.shape
-    count_x, _, _ = out_x.shape
-    count_z, _, _ = out_z.shape
+    count_x, _, _ = out_x_shape
+    count_z, _, _ = out_z_shape
     count_v, = out_v.shape
     assert count_x == count_z
     assert count_x == count_v
@@ -189,7 +194,17 @@ def get_x_z_subsample(meta, t_offset: int, length: int, window_length: int, out_
     indexes = list(chunks(indexes, count_x // 12))
     threads = []
     for indexes_tuple in indexes:
-        thread = multiprocessing.Process(target=worker, args=(indexes_tuple, meta, window_length, out_x, out_z))
+        thread = multiprocessing.Process(
+            target=worker,
+            args=(
+                indexes_tuple,
+                meta,
+                window_length,
+                shared_out_x,
+                out_x_shape,
+                shared_out_z,
+                out_z_shape
+            ))
         thread.start()
         threads.append(thread)
     for thread in threads:
@@ -250,6 +265,13 @@ def get_kaggle_series():
     return meta
 
 
+def shape_size(shape):
+    result = 1
+    for dim in shape:
+        result *= dim
+    return result
+
+
 def load_kaggle():
     meta = get_kaggle_series()
 
@@ -270,21 +292,27 @@ def load_kaggle():
     v = 1 + np.mean(s[:, t1:t0], axis=1)
     meta['v'] = v
 
-    n_samples = 100_000
+    n_samples = 100
     n_feature = 81
-    x_train = np.zeros(shape=(n_samples, enc_len + dec_len, n_feature))
-    z_train = np.zeros(shape=(n_samples, enc_len + dec_len, 1))
-    v_train = np.zeros(shape=(n_samples,))
+    x_train_shape = (n_samples, enc_len + dec_len, n_feature)
+    z_train_shape = (n_samples, enc_len + dec_len, 1)
+    v_train_shape = (n_samples,)
+    shared_x_train = Array(c.c_double, shape_size(x_train_shape), lock=False)
+    shared_z_train = Array(c.c_double, shape_size(z_train_shape), lock=False)
+    v_train = np.zeros(shape=v_train_shape)
     get_x_z_subsample(
         meta,
         t_offset=t1,
         length=train_len,
         window_length=enc_len + dec_len,
-        out_x=x_train,
-        out_z=z_train,
+        shared_out_x=shared_x_train,
+        out_x_shape=x_train_shape,
+        shared_out_z=shared_z_train,
+        out_z_shape=z_train_shape,
         out_v=v_train
     )
-
+    x_train = np.frombuffer(shared_x_train).reshape(x_train_shape)
+    z_train = np.frombuffer(shared_z_train).reshape(z_train_shape)
     v_train = np.expand_dims(v_train, axis=-1)
 
     # enc_x, enc_z, _ = get_x_z(
