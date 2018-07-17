@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
         enc_x = x_valid[:, :enc_len, :]
         enc_z = z_valid[:, :enc_len, :]
-        dec_x = x_valid[:, enc_len:, :]
+        dec_x = x_valid[:, enc_len:, 13:]
         dec_z = z_valid[:, enc_len:, :]
 
         model = NegBinNet(x_dim)
