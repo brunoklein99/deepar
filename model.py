@@ -13,8 +13,12 @@ class Net(nn.Module):
 
     def __init__(self, x_dim):
         super().__init__()
+        shops_emb_dim = 5
+        items_emb_dim = 5
+        self.embedding_shops = nn.Embedding(10, shops_emb_dim)
+        self.embedding_items = nn.Embedding(50, items_emb_dim)
         self.cell = nn.LSTM(
-            input_size=x_dim,
+            input_size=x_dim - 2 + shops_emb_dim + items_emb_dim,
             hidden_size=settings.HIDDEN_DIM,
             num_layers=3,
             batch_first=True
@@ -40,12 +44,24 @@ class Net(nn.Module):
     def loss(self, z, m, a):
         pass
 
+    def transform_input_embedding(self, x):
+        idx_shops = x[:, :, -2].long()
+        emb_shops = self.embedding_shops(idx_shops)
+        idx_items = x[:, :, -1].long()
+        emb_items = self.embedding_items(idx_items)
+        x = x[:, :, :-2]
+        x = torch.cat((x, emb_shops, emb_items), dim=2)
+        return x
+
     def forward(self, x, v):
+        x = self.transform_input_embedding(x)
         o, (_, _) = self.cell(x)
         m, a = self.forward_ma(o, v)
         return m, a
 
     def forward_infer(self, enc_x, enc_z, dec_x, v):
+        enc_x = self.transform_input_embedding(enc_x)
+        dec_x = self.transform_input_embedding(dec_x)
         N, t_enc, _ = enc_x.shape
         _, t_dec, _ = dec_x.shape
         Z = torch.zeros(N, t_enc + t_dec, 1)
@@ -108,7 +124,7 @@ class Net(nn.Module):
             o, (h, c) = self.cell(x, (h, c))
             m, a = self.forward_ma(o, v)
             z_pred = self.sample(m, a)
-            Z[:, t:t+1, :] = z_pred
+            Z[:, t:t + 1, :] = z_pred
         return Z[:, t_enc:, :]
 
 

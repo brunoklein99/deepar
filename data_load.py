@@ -93,16 +93,18 @@ def get_x_z_at_i_t(meta, v, datetime_offset: datetime.datetime, i: int, t: int, 
         x.append((d.year - 2013) / 5)
         x.append(sin(2 * pi * ((d.month - 1) / 11)))
         x.append(cos(2 * pi * ((d.month - 1) / 11)))
-        for idx in range(10):
-            if idx == meta['shops'][i]:
-                x.append(1.0)
-            else:
-                x.append(0.0)
-        for idx in range(50):
-            if idx == meta['items'][i]:
-                x.append(1.0)
-            else:
-                x.append(0.0)
+        x.append(meta['shops'][i])
+        x.append(meta['items'][i])
+        # for idx in range(10):
+        #     if idx == meta['shops'][i]:
+        #         x.append(1.0)
+        #     else:
+        #         x.append(0.0)
+        # for idx in range(50):
+        #     if idx == meta['items'][i]:
+        #         x.append(1.0)
+        #     else:
+        #         x.append(0.0)
     else:
         raise Exception('gran not supported')
     z = s[i, t]
