@@ -146,6 +146,31 @@ def get_x_z(meta, v, datetime_offset: datetime.datetime, t_offset: int, length: 
     return X, Z, V
 
 
+def get_x_z_non_overlapped(meta, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int, gran='m'):
+    s = meta['series']
+    assert len(s) == len(v)
+    X = []
+    Z = []
+    V = []
+    N, _ = s.shape
+
+    for i in range(N):
+        for t in range(t_offset + length, t_offset, -window_length):
+            if t < window_length:
+                continue
+            x, z = get_window_x_z_at_i_t(meta, v, datetime_offset, i, t - window_length, window_length, gran)
+            X.append(x)
+            Z.append(z)
+            V.append([v[i]])
+        print('i {}/{}'.format(i, N))
+
+    X = np.array(X)
+    Z = np.array(Z)
+    V = np.array(V)
+
+    return X, Z, V
+
+
 def get_x_z_subsample(meta, v, datetime_offset: datetime.datetime, t_offset: int, length: int, window_length: int,
                       count: int, gran='m'):
     s = meta['series']
@@ -236,30 +261,29 @@ def load_kaggle():
 
     enc_len = 180
     dec_len = 90
-    train_len = T - 2
 
     # first t of the series
     t1 = 1
+    train_len = T - 1 - t1
 
     # first t of prediction range
     t0 = t1 + train_len
 
     # first t of encoder (validation)
-    t_enc = t0 - enc_len
+    # t_enc = t0 - enc_len
 
     v = 1 + np.mean(s[:, t1:t0], axis=1)
 
     gran = 'd'
 
-    x_train, z_train, v_train = get_x_z_subsample(
+    x_train, z_train, v_train = get_x_z_non_overlapped(
         meta,
         v,
         datetime_offset,
         t_offset=t1,
         length=train_len,
         window_length=enc_len + dec_len,
-        gran=gran,
-        count=100_000
+        gran=gran
     )
 
     v_train = np.expand_dims(v_train, axis=-1)
@@ -319,6 +343,13 @@ def load_kaggle():
     v = np.expand_dims(v, axis=-1)
 
     nregfeat = 13
+
+    assert len(x_train) == len(z_train) == len(v_train)
+
+    perm = np.random.permutation(range(len(x_train)))
+    x_train = x_train[perm]
+    z_train = z_train[perm]
+    v_train = v_train[perm]
 
     data = {
         'nregfeat': nregfeat,
